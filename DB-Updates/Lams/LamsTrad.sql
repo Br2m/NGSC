@@ -1,0 +1,25 @@
+update `mangos`.`script_texts` SET `content_loc2`='Enfin ! Vous pouvez réveiller Naralex ! Venez m\'aider, braves aventuriers !' where `entry`='-1043000';
+update `mangos`.`script_texts` SET `content_loc2`='Je dois faire les préparatifs nécessaires avant de pouvoir commencer le rituel de réveil. Vous devez me protéger !' where `entry`='-1043001';
+update `mangos`.`script_texts` SET `content_loc2`='Ces cavernes furent jadis un temple de résurrection dans les Tarides. Aujourd\'hui, elles sont les salles des cauchemars.' where `entry`='-1043002';
+update `mangos`.`script_texts` SET `content_loc2`='Venez. Nous devons continuer ! Il y a encore beaucoup à faire avant de pouvoir tirer Naralex de son cauchemar.' where `entry`='-1043003';
+update `mangos`.`script_texts` SET `content_loc2`='Au sein de ce cercle de feu, je dois lancer le sort qui bannira les esprits des seigneurs-Croc tombés au champ d\'honneur.' where `entry`='-1043004';
+update `mangos`.`script_texts` SET `content_loc2`='Les cavernes ont été purifiées. Allons dans les appartements de Naralex.' where `entry`='-1043005';
+update `mangos`.`script_texts` SET `content_loc2`='Au-delà de ce couloir, Naralex dort d\'un sommeil agité.' where `entry`='-1043006';
+update `mangos`.`script_texts` SET `content_loc2`='Accordez-moi votre protection, âmes courageuses, pendant que je fouille dans les profondeurs du Rêve d\'émeraude pour secourir Naralex et mettre un terme à cette corruption.' where `entry`='-1043007';
+update `mangos`.`script_texts` SET `content_loc2`='%s commence à pratiquer le rituel de réveil sur Naralex.' where `entry`='-1043008';
+update `mangos`.`script_texts` SET `content_loc2`='%s s\'agite par intermittence dans un sommeil troublé.' where `entry`='-1043009';
+update `mangos`.`script_texts` SET `content_loc2`='%s se tord de douleur. Le Disciple semble percer.' where `entry`='-1043010';
+update `mangos`.`script_texts` SET `content_loc2`='%s a une vision horrible dans son rêve. Quelque chose bouge sous les eaux troubles.' where `entry`='-1043011';
+update `mangos`.`script_texts` SET `content_loc2`='$N est un sbire du cauchemar de Naralex, aucun doute !' where `entry`='-1043012';
+update `mangos`.`script_texts` SET `content_loc2`='ENFIN JE SUIS EVEILLÉ !' where `entry`='-1043013';
+update `mangos`.`script_texts` SET `content_loc2`='Enfin ! Naralex émerge de son cauchemar.' where `entry`='-1043014';
+update `mangos`.`script_texts` SET `content_loc2`='Ah, être enfin arraché aux griffes du redoutable cauchemar ! Je vous remercie, mon fidèle Disciple, ainsi que vos braves compagnons.' where `entry`='-1043015';
+update `mangos`.`script_texts` SET `content_loc2`='Nous devons aller rejoindre les autres Disciples. Il y a beaucoup de travail à faire avant que je ne puisse à nouveau tenter de rétablir les Tarides. Adieu, braves âmes !' where `entry`='-1043016';
+update `mangos`.`script_texts` SET `content_loc2`='On m\'attaque ! Aidez-moi à me débarrasser de ce maudit $N !' where `entry`='-1043017';
+update `mangos`.`script_texts` SET `content_loc2`='Au secours !' where `entry`='-1043018';
+update `mangos`.`script_texts` SET `content_loc2`='$N est sûrement au service du cauchemar de Naralex !' where `entry`='-1043019';
+
+update `mangos`.`creature_ai_texts` SET `content_loc2`='Nul ne peut s\'opposer aux seigneurs-serpents !' where `entry`='-1135';
+update `mangos`.`creature_ai_texts` SET `content_loc2`='Les anneaux de la mort vont vous broyer !' where `entry`='-140';
+update `mangos`.`creature_ai_texts` SET `content_loc2`='Vous n\'éveillerez pas le rêveur !' where `entry`='-99';
+update `mangos`.`creature_ai_texts` SET `content_loc2`='Je suis le roi serpent ! Je fais ce que je veux !' where `entry`='-123';
