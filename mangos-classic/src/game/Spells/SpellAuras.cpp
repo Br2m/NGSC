@@ -638,18 +638,18 @@ bool Aura::isAffectedOnSpell(SpellEntry const* spell) const
 
 bool Aura::CanProcFrom(SpellEntry const* spell, uint32 EventProcEx, uint32 procEx, bool active, bool useClassMask) const
 {
-    // Check EffectClassMask (in pre-3.x stored in spell_affect in fact)
+	// Check EffectClassMask (in pre-3.x stored in spell_affect in fact)
     ClassFamilyMask mask = sSpellMgr.GetSpellAffectMask(GetId(), GetEffIndex());
 
     // if no class mask defined, or spell_proc_event has SpellFamilyName=0 - allow proc
     if (!useClassMask || !mask)
     {
-        if (!(EventProcEx & PROC_EX_EX_TRIGGER_ALWAYS))
+		if (!(EventProcEx & PROC_EX_EX_TRIGGER_ALWAYS))
         {
-            // Check for extra req (if none) and hit/crit
+			// Check for extra req (if none) and hit/crit
             if (EventProcEx == PROC_EX_NONE)
             {
-                // No extra req, so can trigger only for active (damage/healing present) and hit/crit
+				// No extra req, so can trigger only for active (damage/healing present) and hit/crit
                 if ((procEx & (PROC_EX_NORMAL_HIT | PROC_EX_CRITICAL_HIT)) && active)
                     return true;
                 else
@@ -657,7 +657,7 @@ bool Aura::CanProcFrom(SpellEntry const* spell, uint32 EventProcEx, uint32 procE
             }
             else // Passive spells hits here only if resist/reflect/immune/evade
             {
-                // Passive spells can`t trigger if need hit (exclude cases when procExtra include non-active flags)
+				// Passive spells can`t trigger if need hit (exclude cases when procExtra include non-active flags)
                 if ((EventProcEx & (PROC_EX_NORMAL_HIT | PROC_EX_CRITICAL_HIT) & procEx) && !active)
                     return false;
             }
@@ -666,7 +666,7 @@ bool Aura::CanProcFrom(SpellEntry const* spell, uint32 EventProcEx, uint32 procE
     }
     else
     {
-        // SpellFamilyName check is performed in SpellMgr::IsSpellProcEventCanTriggeredBy and it is done once for whole holder
+		// SpellFamilyName check is performed in SpellMgr::IsSpellProcEventCanTriggeredBy and it is done once for whole holder
         // note: SpellFamilyName is not checked if no spell_proc_event is defined
         return mask.IsFitToFamilyMask(spell->SpellFamilyFlags);
     }
@@ -784,8 +784,8 @@ void Aura::HandleAddModifier(bool apply, bool Real)
 }
 
 void Aura::TriggerSpell()
-{
-    ObjectGuid casterGUID = GetCasterGuid();
+{	
+	ObjectGuid casterGUID = GetCasterGuid();
     Unit* triggerTarget = GetTriggerTarget();
 
     if (!casterGUID || !triggerTarget)
@@ -804,7 +804,7 @@ void Aura::TriggerSpell()
     // specific code for cases with no trigger spell provided in field
     if (triggeredSpellInfo == nullptr)
     {
-        switch (auraSpellInfo->SpellFamilyName)
+		switch (auraSpellInfo->SpellFamilyName)
         {
             case SPELLFAMILY_GENERIC:
             {
@@ -1011,11 +1011,11 @@ void Aura::TriggerSpell()
     }
     else                                                    // initial triggeredSpellInfo != nullptr
     {
-        // for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target)
+		// for channeled spell cast applied from aura owner to channel target (persistent aura affects already applied to true target)
         // come periodic casts applied to targets, so need seelct proper caster (ex. 15790)
         if (IsChanneledSpell(GetSpellProto()) && GetSpellProto()->Effect[GetEffIndex()] != SPELL_EFFECT_PERSISTENT_AREA_AURA)
         {
-            // interesting 2 cases: periodic aura at caster of channeled spell
+			// interesting 2 cases: periodic aura at caster of channeled spell
             if (target->GetObjectGuid() == casterGUID)
             {
                 triggerCaster = target;
@@ -1038,7 +1038,6 @@ void Aura::TriggerSpell()
                 }
             }
         }
-
         // Spell exist but require custom code
         switch (auraId)
         {
@@ -1088,7 +1087,35 @@ void Aura::TriggerSpell()
 
                 break;
             }
-            case 16191:                                     // Mana Tide
+			case 13810:
+			{
+				// Correctif Entrapment
+				Unit* caster = GetCaster();
+				int entrapmentRankId[] = { 19184, 19387, 19388, 19389, 19390 };
+				int entrapmentChance = 0;
+				
+				if (caster->GetTypeId() == TYPEID_PLAYER)
+				{
+					for (int i=0; i<5;i++)
+					{
+						if (((Player*)caster)->HasActiveSpell(entrapmentRankId[i]))
+						{
+							entrapmentChance += 5; // Pour chaque rang du talent, on incrémente de 5% les chances
+						}
+						else
+						{
+							break; // S'il n'a pas le talent, on sort.
+						}
+					}
+
+					if (roll_chance_i(entrapmentChance))
+					{
+						triggerCaster->CastSpell(target, 19185, TRIGGERED_OLD_TRIGGERED, nullptr, this, casterGUID);
+					}
+				}
+				break;
+			}			
+			case 16191:                                     // Mana Tide
             {
                 triggerTarget->CastCustomSpell(triggerTarget, trigger_spell_id, &m_modifier.m_amount, nullptr, nullptr, TRIGGERED_OLD_TRIGGERED, nullptr, this);
                 return;
@@ -1105,15 +1132,19 @@ void Aura::TriggerSpell()
     // All ok cast by default case
     if (triggeredSpellInfo)
     {
-        if (triggerTargetObject)
-            triggerCaster->CastSpell(triggerTargetObject->GetPositionX(), triggerTargetObject->GetPositionY(), triggerTargetObject->GetPositionZ(),
+		if (triggerTargetObject)
+		{
+			triggerCaster->CastSpell(triggerTargetObject->GetPositionX(), triggerTargetObject->GetPositionY(), triggerTargetObject->GetPositionZ(),
                                      triggeredSpellInfo, TRIGGERED_OLD_TRIGGERED, nullptr, this, casterGUID);
-        else
-            triggerCaster->CastSpell(triggerTarget, triggeredSpellInfo, TRIGGERED_OLD_TRIGGERED, nullptr, this, casterGUID);
+		}
+		else
+		{
+			triggerCaster->CastSpell(triggerTarget, triggeredSpellInfo, TRIGGERED_OLD_TRIGGERED, nullptr, this, casterGUID);
+		}
     }
     else
     {
-        if (Unit* caster = GetCaster())
+		if (Unit* caster = GetCaster())
         {
             if (triggerTarget->GetTypeId() != TYPEID_UNIT || !sScriptDevAIMgr.OnEffectDummy(caster, GetId(), GetEffIndex(), (Creature*)triggerTarget, ObjectGuid()))
                 sLog.outError("Aura::TriggerSpell: Spell %u have 0 in EffectTriggered[%d], not handled custom case?", GetId(), GetEffIndex());
