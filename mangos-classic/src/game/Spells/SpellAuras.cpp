@@ -1158,7 +1158,7 @@ void Aura::TriggerSpell()
 
 void Aura::HandleAuraDummy(bool apply, bool Real)
 {
-    // spells required only Real aura add/remove
+	// spells required only Real aura add/remove
     if (!Real)
         return;
 
@@ -1450,6 +1450,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
     // pet auras
     if (PetAura const* petSpell = sSpellMgr.GetPetAura(GetId()))
     {
+		target = GetSpellProto()->Id == 28757 ? GetCaster() : target;
 		
 		if (apply)
 		{
