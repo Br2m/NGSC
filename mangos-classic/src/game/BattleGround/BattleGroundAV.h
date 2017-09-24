@@ -26,7 +26,7 @@
 
 #define BG_AV_BOSS_KILL_QUEST_SPELL         23658
 
-#define BG_AV_CAPTIME                       240000          // 4 minutes
+#define BG_AV_CAPTIME                       300000          // ANCIEN 4 minutes NOUVEAU 5 minutes
 #define BG_AV_SNOWFALL_FIRSTCAP             300000          // 5 minutes but i also have seen 4:05
 
 #define BG_AV_SCORE_INITIAL_POINTS          600
@@ -346,7 +346,7 @@ class BattleGroundAV : public BattleGround
         virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj) override;
         void HandleKillPlayer(Player* player, Player* killer) override;
         void HandleKillUnit(Creature* creature, Player* killer) override;
-        void HandleQuestComplete(uint32 questid, Player* player);
+        void HandleQuestComplete(uint32 questid, Player* player, Object* questGiver);
         bool PlayerCanDoMineQuest(int32 GOId, Team team);
 
         void EndBattleGround(Team winner) override;

@@ -11950,7 +11950,7 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
 
     if (BattleGround* bg = GetBattleGround())
         if (bg->GetTypeID() == BATTLEGROUND_AV)
-            ((BattleGroundAV*)bg)->HandleQuestComplete(pQuest->GetQuestId(), this);
+            ((BattleGroundAV*)bg)->HandleQuestComplete(pQuest->GetQuestId(), this, questGiver);
 
     if (pQuest->GetRewChoiceItemsCount() > 0)
     {
