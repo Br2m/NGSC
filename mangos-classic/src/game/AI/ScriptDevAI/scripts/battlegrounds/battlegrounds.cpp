@@ -261,7 +261,7 @@ struct npc_wing_commander_slidoreAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 4:
-					m_creature->SummonCreature(NPC_SLIDORE_GRYPHON, -1074.03f, -324.18f, 96.7436f, 3.65916f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_SLIDORE_GRYPHON, -1074.03f, -324.18f, 96.7436f, 3.65916f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_creature->ForcedDespawn(2);
 					m_uiPatrolTimer = 0;
 					break;
@@ -527,7 +527,7 @@ struct npc_wing_commander_viporeAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 4:
-					m_creature->SummonCreature(NPC_VIPORE_GRYPHON, -1248.62f, -348.403f, 89.4532f, 5.04068f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_VIPORE_GRYPHON, -1248.62f, -348.403f, 89.4532f, 5.04068f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_creature->ForcedDespawn(2);
 					m_uiPatrolTimer = 0;
 					break;
@@ -786,9 +786,9 @@ struct npc_wing_commander_ichmanAI : public npc_escortAI
 					break;
 				case 1:
 					DoScriptText(SAY_ICHMAN_START_PATROL, m_creature);
-					m_creature->SummonCreature(NPC_ICHMAN_GRYPHON, 520.8f, -43.5716f, 47.01f, 0.110732f, TEMPSPAWN_TIMED_DESPAWN, 10000, false, false, 2);
+					m_creature->SummonCreature(NPC_ICHMAN_GRYPHON, 520.8f, -43.5716f, 47.01f, 0.110732f, TEMPSUMMON_TIMED_DESPAWN, 10000, false, false, 2);
 					m_uiPatrolTimer = 2000;
-					++m_uiPatrolNum;TEMPSPAWN_CORPSE_DESPAWN
+					++m_uiPatrolNum;
 					break;
 				case 2:
 					m_creature->ForcedDespawn(10);
@@ -796,7 +796,7 @@ struct npc_wing_commander_ichmanAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 3:
-					m_creature->SummonCreature(NPC_ICHMAN_GRYPHON, -1348.7f, -289.173f, 120.941f, 3.80289f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_ICHMAN_GRYPHON, -1348.7f, -289.173f, 120.941f, 3.80289f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_uiPatrolTimer = 0;
 					break;
 				}
@@ -1053,7 +1053,7 @@ struct npc_wing_commander_guseAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 4:
-					m_creature->SummonCreature(NPC_GUSE_WAR_RIDER, 670.582f, -283.38f, 83.251f, 2.53132f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_GUSE_WAR_RIDER, 670.582f, -283.38f, 83.251f, 2.53132f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_creature->ForcedDespawn(2);
 					m_uiPatrolTimer = 0;
 					break;
@@ -1311,7 +1311,7 @@ struct npc_wing_commander_jeztorAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 4:
-					m_creature->SummonCreature(NPC_JEZTOR_WAR_RIDER, 641.157f, -123.033f, 113.2225f, 1.31867f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_JEZTOR_WAR_RIDER, 641.157f, -123.033f, 113.2225f, 1.31867f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_creature->ForcedDespawn(2);
 					m_uiPatrolTimer = 0;
 					break;
@@ -1607,7 +1607,7 @@ struct npc_wing_commander_mulverickAI : public npc_escortAI
 					++m_uiPatrolNum;
 					break;
 				case 4:
-					m_creature->SummonCreature(NPC_MULVERICK_WAR_RIDER, 605.494f, -39.2881f, 105.7036f, 3.5547f, TEMPSPAWN_CORPSE_DESPAWN, 0, false, false, 1);
+					m_creature->SummonCreature(NPC_MULVERICK_WAR_RIDER, 605.494f, -39.2881f, 105.7036f, 3.5547f, TEMPSUMMON_CORPSE_DESPAWN, 0, false, false, 1);
 					m_creature->ForcedDespawn(2);
 					m_uiPatrolTimer = 0;
 					break;
