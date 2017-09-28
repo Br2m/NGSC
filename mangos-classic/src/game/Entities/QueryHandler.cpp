@@ -138,7 +138,7 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recv_data)
         char const* subName = ci->SubName;
         sObjectMgr.GetCreatureLocaleStrings(entry, loc_idx, &name, &subName);
 
-        //DETAIL_LOG("WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", ci->Name, entry);
+        DETAIL_LOG("WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", ci->Name, entry);
         // guess size
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 100);
         data << uint32(entry);                              // creature entry
@@ -158,15 +158,16 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recv_data)
 
         data << uint16(ci->civilian);                       // wdbFeild14
         SendPacket(data);
-		//DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
+        DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }
     else
     {
-		//DEBUG_LOG("WORLD: CMSG_CREATURE_QUERY - Guid: %s Entry: %u NO CREATURE INFO!", guid.GetString().c_str(), entry);
+        DEBUG_LOG("WORLD: CMSG_CREATURE_QUERY - Guid: %s Entry: %u NO CREATURE INFO!",
+                  guid.GetString().c_str(), entry);
         WorldPacket data(SMSG_CREATURE_QUERY_RESPONSE, 4);
         data << uint32(entry | 0x80000000);
         SendPacket(data);
-		//DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
+        DEBUG_LOG("WORLD: Sent SMSG_CREATURE_QUERY_RESPONSE");
     }
 }
 
@@ -193,7 +194,7 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recv_data)
                     Name = gl->Name[loc_idx];
             }
         }
-        //DETAIL_LOG("WORLD: CMSG_GAMEOBJECT_QUERY '%s' - Entry: %u. ", info->name, entryID);
+        DETAIL_LOG("WORLD: CMSG_GAMEOBJECT_QUERY '%s' - Entry: %u. ", info->name, entryID);
         WorldPacket data(SMSG_GAMEOBJECT_QUERY_RESPONSE, 150);
         data << uint32(entryID);
         data << uint32(info->type);
@@ -203,21 +204,22 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recv_data)
         data.append(info->raw.data, 24);
         // data << float(info->size);                       // go size , to check
         SendPacket(data);
-		//DEBUG_LOG("WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
+        DEBUG_LOG("WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
     }
     else
     {
-		//DEBUG_LOG("WORLD: CMSG_GAMEOBJECT_QUERY - Guid: %s Entry: %u Missing gameobject info!", guid.GetString().c_str(), entryID);
+        DEBUG_LOG("WORLD: CMSG_GAMEOBJECT_QUERY - Guid: %s Entry: %u Missing gameobject info!",
+                  guid.GetString().c_str(), entryID);
         WorldPacket data(SMSG_GAMEOBJECT_QUERY_RESPONSE, 4);
         data << uint32(entryID | 0x80000000);
         SendPacket(data);
-		//DEBUG_LOG("WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
+        DEBUG_LOG("WORLD: Sent SMSG_GAMEOBJECT_QUERY_RESPONSE");
     }
 }
 
 void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recv_data*/)
 {
-	//DETAIL_LOG("WORLD: Received opcode MSG_CORPSE_QUERY");
+    DETAIL_LOG("WORLD: Received opcode MSG_CORPSE_QUERY");
 
     Corpse* corpse = GetPlayer()->GetCorpse();
 
@@ -273,7 +275,7 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recv_data)
     recv_data >> textID;
     recv_data >> guid;
 
-    //DETAIL_LOG("WORLD: CMSG_NPC_TEXT_QUERY ID '%u'", textID);
+    DETAIL_LOG("WORLD: CMSG_NPC_TEXT_QUERY ID '%u'", textID);
 
     GossipText const* pGossip = sObjectMgr.GetGossipText(textID);
 
@@ -335,12 +337,12 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recv_data)
 
     SendPacket(data);
 
-	//DEBUG_LOG("WORLD: Sent SMSG_NPC_TEXT_UPDATE");
+    DEBUG_LOG("WORLD: Sent SMSG_NPC_TEXT_UPDATE");
 }
 
 void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recv_data)
 {
-	//DETAIL_LOG("WORLD: Received opcode CMSG_PAGE_TEXT_QUERY");
+    DETAIL_LOG("WORLD: Received opcode CMSG_PAGE_TEXT_QUERY");
 
     uint32 pageID;
     recv_data >> pageID;
@@ -379,7 +381,7 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recv_data)
         }
         SendPacket(data);
 
-		//DEBUG_LOG("WORLD: Sent SMSG_PAGE_TEXT_QUERY_RESPONSE");
+        DEBUG_LOG("WORLD: Sent SMSG_PAGE_TEXT_QUERY_RESPONSE");
     }
 }
 

@@ -55,7 +55,7 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    //DETAIL_LOG("WORLD: CMSG_USE_ITEM packet, bagIndex: %u, slot: %u, spell_count: %u , Item: %u, data length = %u", bagIndex, slot, spell_count, pItem->GetEntry(), (uint32)recvPacket.size());
+    DETAIL_LOG("WORLD: CMSG_USE_ITEM packet, bagIndex: %u, slot: %u, spell_count: %u , Item: %u, data length = %u", bagIndex, slot, spell_count, pItem->GetEntry(), (uint32)recvPacket.size());
 
     ItemPrototype const* proto = pItem->GetProto();
     if (!proto)
@@ -159,13 +159,13 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleOpenItemOpcode(WorldPacket& recvPacket)
 {
-    //DETAIL_LOG("WORLD: CMSG_OPEN_ITEM packet, data length = " SIZEFMTD, recvPacket.size());
+    DETAIL_LOG("WORLD: CMSG_OPEN_ITEM packet, data length = " SIZEFMTD, recvPacket.size());
 
     uint8 bagIndex, slot;
 
     recvPacket >> bagIndex >> slot;
 
-    //DETAIL_LOG("bagIndex: %u, slot: %u", bagIndex, slot);
+    DETAIL_LOG("bagIndex: %u, slot: %u", bagIndex, slot);
 
     Player* pUser = _player;
 
@@ -251,7 +251,7 @@ void WorldSession::HandleGameObjectUseOpcode(WorldPacket& recv_data)
 
     recv_data >> guid;
 
-	//DEBUG_LOG("WORLD: Received opcode CMSG_GAMEOBJ_USE guid: %s", guid.GetString().c_str());
+    DEBUG_LOG("WORLD: Received opcode CMSG_GAMEOBJ_USE guid: %s", guid.GetString().c_str());
 
     // ignore for remote control state
     if (!_player->IsSelfMover())
@@ -294,7 +294,7 @@ void WorldSession::HandleMeetingStoneJoinOpcode(WorldPacket& recv_data)
 
     recv_data >> guid;
 
-    //DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_JOIN Message guid: %s", guid.GetString().c_str());
+    DEBUG_LOG("WORLD: Recvd CMSG_MEETINGSTONE_JOIN Message guid: %s", guid.GetString().c_str());
 
     // ignore for remote control state
     if (!_player->IsSelfMover())
@@ -327,7 +327,8 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    //DEBUG_LOG("WORLD: got cast spell packet, spellId - %u, data length = " SIZEFMTD, spellId, recvPacket.size());
+    DEBUG_LOG("WORLD: got cast spell packet, spellId - %u, data length = " SIZEFMTD,
+              spellId, recvPacket.size());
 
     SpellEntry const* spellInfo = sSpellTemplate.LookupEntry<SpellEntry>(spellId);
     if (!spellInfo)
@@ -498,7 +499,8 @@ void WorldSession::HandlePetCancelAuraOpcode(WorldPacket& recvPacket)
 
     pet->RemoveAurasDueToSpell(spellId);
 
-    pet->AddCreatureSpellCooldown(spellId);
+    // TODO: check if its correctly handled in aura remove
+    //pet->AddCreatureSpellCooldown(spellId);
 }
 
 void WorldSession::HandleCancelGrowthAuraOpcode(WorldPacket& /*recvPacket*/)
@@ -544,7 +546,7 @@ void WorldSession::HandleTotemDestroyed(WorldPacket& recvPacket)
 
 void WorldSession::HandleSelfResOpcode(WorldPacket& /*recv_data*/)
 {
-    //DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_SELF_RES");                  // empty opcode
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_SELF_RES");                  // empty opcode
 
     if (_player->GetUInt32Value(PLAYER_SELF_RES_SPELL))
     {

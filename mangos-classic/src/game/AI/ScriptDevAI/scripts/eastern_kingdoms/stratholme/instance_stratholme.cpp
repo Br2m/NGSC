@@ -55,11 +55,11 @@ void instance_stratholme::OnPlayerEnter(Player* pPlayer)
 {
     // Baron ultimatum succeed: summon Ysida outside the cage alive
     if (GetData(TYPE_BARON_RUN) == DONE)
-        pPlayer->SummonCreature(NPC_YSIDA, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0);
+        pPlayer->SummonCreature(NPC_YSIDA, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
     // Baron ultimatum failed: summon Ysida outside the cage dead
     else if (GetData(TYPE_BARON_RUN) == FAIL)
     {
-        if (Creature* pYsida = pPlayer->SummonCreature(NPC_YSIDA, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+        if (Creature* pYsida = pPlayer->SummonCreature(NPC_YSIDA, aStratholmeLocation[8].m_fX, aStratholmeLocation[8].m_fY, aStratholmeLocation[8].m_fZ, aStratholmeLocation[8].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
             pYsida->SetDeadByDefault(true);
     }
 }
@@ -87,7 +87,7 @@ bool instance_stratholme::StartSlaugtherSquare()
         DoUseDoorOrButton(GO_PORT_GAUNTLET);
         DoUseDoorOrButton(GO_PORT_SLAUGTHER);
 
-        //DEBUG_log("SD2: Instance Stratholme: Open slaugther square.");
+        debug_log("SD2: Instance Stratholme: Open slaugther square.");
 
         return true;
     }
@@ -222,12 +222,12 @@ void instance_stratholme::SetData(uint32 uiType, uint32 uiData)
                     if (Creature* pBaron = GetSingleCreatureFromStorage(NPC_BARON))
                     {
                         DoOrSimulateScriptTextForThisInstance(SAY_ANNOUNCE_RUN_START, NPC_BARON);
-                        if (Creature* pYsida = pBaron->SummonCreature(NPC_YSIDA, aStratholmeLocation[7].m_fX, aStratholmeLocation[7].m_fY, aStratholmeLocation[7].m_fZ, aStratholmeLocation[7].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+                        if (Creature* pYsida = pBaron->SummonCreature(NPC_YSIDA, aStratholmeLocation[7].m_fX, aStratholmeLocation[7].m_fY, aStratholmeLocation[7].m_fZ, aStratholmeLocation[7].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
                             pYsida->RemoveFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER | UNIT_NPC_FLAG_GOSSIP);
                     }
 
                     m_uiBaronRunTimer = 45 * MINUTE * IN_MILLISECONDS;
-                    //DEBUG_log("SD2: Instance Stratholme: Baron run in progress.");
+                    debug_log("SD2: Instance Stratholme: Baron run in progress.");
                     break;
                 case FAIL:
                     // may add code to remove aura from players, but in theory the time should be up already and removed.
@@ -288,17 +288,14 @@ void instance_stratholme::SetData(uint32 uiType, uint32 uiData)
                     if (Creature* pBaron = GetSingleCreatureFromStorage(NPC_BARON))
                     {
                         DoScriptText(SAY_ANNOUNCE_RAMSTEIN, pBaron);
-                        if (Creature* pRamstein = pBaron->SummonCreature(NPC_RAMSTEIN, aStratholmeLocation[2].m_fX, aStratholmeLocation[2].m_fY, aStratholmeLocation[2].m_fZ, aStratholmeLocation[2].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+                        if (Creature* pRamstein = pBaron->SummonCreature(NPC_RAMSTEIN, aStratholmeLocation[2].m_fX, aStratholmeLocation[2].m_fY, aStratholmeLocation[2].m_fZ, aStratholmeLocation[2].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
                             pRamstein->GetMotionMaster()->MovePoint(0, aStratholmeLocation[5].m_fX, aStratholmeLocation[5].m_fY, aStratholmeLocation[5].m_fZ);
 
-                        //DEBUG_log("SD2: Instance Stratholme - Slaugther event: Ramstein spawned.");
+                        debug_log("SD2: Instance Stratholme - Slaugther event: Ramstein spawned.");
                     }
                 }
-				else
-				{
-					//DEBUG_log("SD2: Instance Stratholme - Slaugther event: %u Abomnation left to kill.", uiCount);
-				}
- 
+                else
+                    debug_log("SD2: Instance Stratholme - Slaugther event: %u Abomnation left to kill.", uiCount);
             }
             // After fail aggroing Ramstein means wipe on Ramstein, so close door again
             if (uiData == IN_PROGRESS && m_auiEncounter[uiType] == FAIL)
@@ -321,11 +318,11 @@ void instance_stratholme::SetData(uint32 uiType, uint32 uiData)
                     {
                         float fX, fY, fZ;
                         pBaron->GetRandomPoint(aStratholmeLocation[6].m_fX, aStratholmeLocation[6].m_fY, aStratholmeLocation[6].m_fZ, 5.0f, fX, fY, fZ);
-                        if (Creature* pTemp = pBaron->SummonCreature(NPC_BLACK_GUARD, aStratholmeLocation[6].m_fX, aStratholmeLocation[6].m_fY, aStratholmeLocation[6].m_fZ, aStratholmeLocation[6].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+                        if (Creature* pTemp = pBaron->SummonCreature(NPC_BLACK_GUARD, aStratholmeLocation[6].m_fX, aStratholmeLocation[6].m_fY, aStratholmeLocation[6].m_fZ, aStratholmeLocation[6].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
                             m_luiGuardGUIDs.push_back(pTemp->GetObjectGuid());
                     }
 
-                    //DEBUG_log("SD2: Instance Stratholme - Slaugther event: Summoned 5 guards.");
+                    debug_log("SD2: Instance Stratholme - Slaugther event: Summoned 5 guards.");
                 }
             }
             // Open Door again and stop Abomnation
@@ -798,7 +795,7 @@ void instance_stratholme::DoSpawnScarletGuards(uint8 uiStep, Player* pSummoner)
     // Spawn the two guards and move them to where they will guard (each side of a door)
     for (uint8 i = 0; i < 2; i++)
     {
-        if (Creature* pTemp = pSummoner->SummonCreature(uiNPCEntry[i], aScarletGuards[uiIndex].m_fX, aScarletGuards[uiIndex].m_fY, aScarletGuards[uiIndex].m_fZ, aScarletGuards[uiIndex].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+        if (Creature* pTemp = pSummoner->SummonCreature(uiNPCEntry[i], aScarletGuards[uiIndex].m_fX, aScarletGuards[uiIndex].m_fY, aScarletGuards[uiIndex].m_fZ, aScarletGuards[uiIndex].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
         {
             pTemp->SetWalk(false);
             pTemp->GetMotionMaster()->MovePoint(0, aScarletGuards[uiIndex + i + 1].m_fX, aScarletGuards[uiIndex + i + 1].m_fY, aScarletGuards[uiIndex + i + 1].m_fZ);
@@ -847,7 +844,7 @@ void instance_stratholme::DoSpawnScourgeInvaders(uint8 uiStep, Player* pSummoner
     {
         float fTargetPosX, fTargetPosY, fTargetPosZ;
 
-        if (Creature* pTemp = pSummoner->SummonCreature(uiMobList[i], aScourgeInvaders[uiIndex].m_fX, aScourgeInvaders[uiIndex].m_fY, aScourgeInvaders[uiIndex].m_fZ, aScourgeInvaders[uiIndex].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+        if (Creature* pTemp = pSummoner->SummonCreature(uiMobList[i], aScourgeInvaders[uiIndex].m_fX, aScourgeInvaders[uiIndex].m_fY, aScourgeInvaders[uiIndex].m_fZ, aScourgeInvaders[uiIndex].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
         {
             pTemp->SetWalk(false);
             pTemp->GetRandomPoint(aScourgeInvaders[uiIndex + 1].m_fX, aScourgeInvaders[uiIndex + 1].m_fY, aScourgeInvaders[uiIndex + 1].m_fZ, 6.0f, fTargetPosX, fTargetPosY, fTargetPosZ);
@@ -913,7 +910,7 @@ void instance_stratholme::DoScarletBastionDefense(uint8 uiStep, Creature* pCreat
             DoMoveBackDefenders(uiStep, pCreature);
             return;
         case TIMMY:
-            pCreature->SummonCreature(NPC_TIMMY_THE_CRUEL, aScourgeInvaders[0].m_fX, aScourgeInvaders[0].m_fY, aScourgeInvaders[0].m_fZ, aScourgeInvaders[0].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0);
+            pCreature->SummonCreature(NPC_TIMMY_THE_CRUEL, aScourgeInvaders[0].m_fX, aScourgeInvaders[0].m_fY, aScourgeInvaders[0].m_fZ, aScourgeInvaders[0].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0);
             return;
         // Scarlet guards spawned
         case HALL_OF_LIGHTS:
@@ -940,7 +937,7 @@ void instance_stratholme::DoGateTrap(uint8 uiGate)
     if (m_uiGateTrapTimers[uiGate][0])
         return;
 
-    //DEBUG_log("SD2: Instance Stratholme - Rat Trap activated %i.", uiGate);
+    debug_log("SD2: Instance Stratholme - Rat Trap activated %i.", uiGate);
     // close the gates
     DoUseDoorOrButton(aGates[2 * uiGate]);
     DoUseDoorOrButton(aGates[2 * uiGate + 1]);
@@ -963,7 +960,7 @@ void instance_stratholme::DoSpawnPlaguedCritters(uint8 uiGate, Player* pPlayer)
     {
         float fX, fY, fZ;
         pPlayer->GetRandomPoint(aGateTrap[uiGate].m_fX, aGateTrap[uiGate].m_fY, aGateTrap[uiGate].m_fZ, 8.0f, fX, fY, fZ);
-        pPlayer->SummonCreature(uiEntry, fX, fY, fZ, 0, TEMPSUMMON_DEAD_DESPAWN, 0);
+        pPlayer->SummonCreature(uiEntry, fX, fY, fZ, 0, TEMPSPAWN_DEAD_DESPAWN, 0);
     }
 }
 
@@ -978,7 +975,7 @@ void instance_stratholme::Update(uint32 uiDiff)
             m_uiGateTrapTimers[i][0] -= uiDiff;
             if (m_uiGateTrapTimers[i][0] <= uiDiff)
             {
-                //DEBUG_log("SD2: Instance Stratholme - Rat Trap reseted %u.", i);
+                debug_log("SD2: Instance Stratholme - Rat Trap reseted %u.", i);
                 m_uiGateTrapTimers[i][0] = 0;
             }
         }
@@ -1150,7 +1147,7 @@ void instance_stratholme::Update(uint32 uiDiff)
                 DoOrSimulateScriptTextForThisInstance(SAY_YSIDA_RUN_FAIL, NPC_YSIDA);
 
                 m_uiBaronRunTimer = 0;  // event done for good, no more speech
-                //DEBUG_log("SD2: Instance Stratholme: Baron run event reached end. Event has state %u.", GetData(TYPE_BARON_RUN));
+                debug_log("SD2: Instance Stratholme: Baron run event reached end. Event has state %u.", GetData(TYPE_BARON_RUN));
             }
         }
         else
@@ -1166,7 +1163,7 @@ void instance_stratholme::Update(uint32 uiDiff)
                 if (Creature* pBaron = GetSingleCreatureFromStorage(NPC_BARON))
                 {
                     // Summon mindless skeletons and move them to random point in the center of the square
-                    if (Creature* pTemp = pBaron->SummonCreature(NPC_MINDLESS_UNDEAD, aStratholmeLocation[4].m_fX, aStratholmeLocation[4].m_fY, aStratholmeLocation[4].m_fZ, aStratholmeLocation[4].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+                    if (Creature* pTemp = pBaron->SummonCreature(NPC_MINDLESS_UNDEAD, aStratholmeLocation[4].m_fX, aStratholmeLocation[4].m_fY, aStratholmeLocation[4].m_fZ, aStratholmeLocation[4].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
                     {
                         float fX, fY, fZ;
                         pBaron->GetRandomPoint(aStratholmeLocation[5].m_fX, aStratholmeLocation[5].m_fY, aStratholmeLocation[5].m_fZ, 20.0f, fX, fY, fZ);

@@ -58,7 +58,7 @@ void PetAI::MoveInLineOfSight(Unit* u)
     if (CharmInfo* charmInfo = m_unit->GetCharmInfo())
         if (charmInfo->HasReactState(REACT_AGGRESSIVE)
             && !(pet && pet->GetModeFlags() & PET_MODE_DISABLE_ACTIONS)
-            && u && (m_unit->IsHostileTo(u) || u->IsHostileTo(m_unit->GetCharmerOrOwner()))
+            && u && (m_unit->IsHostileTo(u) || u->IsHostileTo(m_unit->GetMaster()))
             && u->isTargetableForAttack() && u->isInAccessablePlaceFor(m_unit)
             && m_unit->IsWithinDistInMap(u, m_unit->GetAttackDistance(u))
             && m_unit->GetDistanceZ(u) <= CREATURE_Z_ATTACK_RANGE
@@ -106,7 +106,7 @@ void PetAI::UpdateAI(const uint32 diff)
     Creature* creature = (m_unit->GetTypeId() == TYPEID_UNIT) ? static_cast<Creature*>(m_unit) : nullptr;
     Pet* pet = (creature && creature->IsPet()) ? static_cast<Pet*>(m_unit) : nullptr;
     
-    Unit* owner = m_unit->GetCharmerOrOwner();
+    Unit* owner = m_unit->GetMaster();
     if (!owner)
         return;
 
@@ -169,11 +169,7 @@ void PetAI::UpdateAI(const uint32 diff)
             SpellCastResult result = spell->CheckPetCast(victim);
 
             if (result == SPELL_CAST_OK)
-            {
-                if (creature)
-                    creature->AddCreatureSpellCooldown(spell_id);
-                spell->SpellStart(&(spell->m_targets));
-            }
+            	spell->SpellStart(&(spell->m_targets));
             else
                 delete spell;
 
@@ -199,7 +195,7 @@ void PetAI::UpdateAI(const uint32 diff)
                 if (!spellInfo)
                     continue;
 
-                if (m_unit->GetCharmInfo() && m_unit->GetCharmInfo()->GetGlobalCooldownMgr().HasGlobalCooldown(spellInfo))
+                if (!m_unit->IsSpellReady(*spellInfo))
                     continue;
 
                 // ignore some combinations of combat state and combat/non combat spells
@@ -284,8 +280,6 @@ void PetAI::UpdateAI(const uint32 diff)
                     m_unit->SendCreateUpdateToPlayer((Player*)owner);
             }
 
-            if (creature)
-                creature->AddCreatureSpellCooldown(spell->m_spellInfo->Id);
             if (pet)
                 pet->CheckLearning(spell->m_spellInfo->Id);
 
@@ -310,7 +304,7 @@ void PetAI::UpdateAI(const uint32 diff)
         // This is needed for charmed creatures, as once their target was reset other effects can trigger threat
         if (!victim->isTargetableForAttack())
         {
-            //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "PetAI (guid = %u) is stopping attack.", m_unit->GetGUIDLow());
+            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "PetAI (guid = %u) is stopping attack.", m_unit->GetGUIDLow());
             m_unit->CombatStop();
             inCombat = false;
             
@@ -340,10 +334,10 @@ void PetAI::UpdateAI(const uint32 diff)
     {
         CharmInfo* charmInfo = m_unit->GetCharmInfo();
 
-		if (owner->isInCombat() && !(charmInfo && (charmInfo->HasReactState(REACT_PASSIVE) || charmInfo->HasReactState(REACT_DEFENSIVE)))) // Correctif
-		{
-			AttackStart(owner->getAttackerForHelper());
-		} 
+	if (owner->isInCombat() && !(charmInfo && (charmInfo->HasReactState(REACT_PASSIVE) || charmInfo->HasReactState(REACT_DEFENSIVE)))) // Correctif
+	{
+		AttackStart(owner->getAttackerForHelper());
+	}
         else
         {
             if (charmInfo && charmInfo->HasCommandState(COMMAND_STAY))
@@ -396,7 +390,7 @@ bool PetAI::_isVisible(Unit* u) const
 
 void PetAI::UpdateAllies()
 {
-    Unit* owner = m_unit->GetCharmerOrOwner();
+    Unit* owner = m_unit->GetMaster();
     Group* pGroup = nullptr;
 
     m_updateAlliesTimer = 10 * IN_MILLISECONDS;             // update friendly targets every 10 seconds, lesser checks increase performance

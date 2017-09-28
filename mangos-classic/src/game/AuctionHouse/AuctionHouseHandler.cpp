@@ -41,7 +41,7 @@ void WorldSession::HandleAuctionHelloOpcode(WorldPacket& recv_data)
     Creature* unit = GetPlayer()->GetNPCIfCanInteractWith(auctioneerGuid, UNIT_NPC_FLAG_AUCTIONEER);
     if (!unit)
     {
-        //DEBUG_LOG("WORLD: HandleAuctionHelloOpcode - %s not found or you can't interact with him.", auctioneerGuid.GetString().c_str());
+        DEBUG_LOG("WORLD: HandleAuctionHelloOpcode - %s not found or you can't interact with him.", auctioneerGuid.GetString().c_str());
         return;
     }
 
@@ -199,7 +199,7 @@ AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(Objec
         // using special access modes (1,-1) done at mode set in command, so not need recheck
         if (GetPlayer()->GetAuctionAccessMode() == 0 && !ChatHandler(GetPlayer()).FindCommand("auction"))
         {
-            //DEBUG_LOG("%s attempt open auction in cheating way.", guid.GetString().c_str());
+            DEBUG_LOG("%s attempt open auction in cheating way.", guid.GetString().c_str());
             return nullptr;
         }
 
@@ -211,7 +211,7 @@ AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(Objec
         auctioneer = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_AUCTIONEER);
         if (!auctioneer)
         {
-            //DEBUG_LOG("Auctioneer %s accessed in cheating way.", guid.GetString().c_str());
+            DEBUG_LOG("Auctioneer %s accessed in cheating way.", guid.GetString().c_str());
             return nullptr;
         }
     }
@@ -223,7 +223,7 @@ AuctionHouseEntry const* WorldSession::GetCheckedAuctionHouseForAuctioneer(Objec
 // this void creates new auction and adds auction to some auctionhouse
 void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionSellItem");
+    DEBUG_LOG("WORLD: HandleAuctionSellItem");
 
     ObjectGuid auctioneerGuid;
     ObjectGuid itemGuid;
@@ -311,8 +311,8 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
 
     AuctionEntry* AH = auctionHouse->AddAuction(auctionHouseEntry, it, etime, bid, buyout, deposit, pl);
 
-	// //DETAIL_LOG("selling %s to auctioneer %s with initial bid %u with buyout %u and with time %u (in sec) in auctionhouse %u",
-	//           itemGuid.GetString().c_str(), auctioneerGuid.GetString().c_str(), bid, buyout, etime, auctionHouseEntry->houseId);
+    DETAIL_LOG("selling %s to auctioneer %s with initial bid %u with buyout %u and with time %u (in sec) in auctionhouse %u",
+               itemGuid.GetString().c_str(), auctioneerGuid.GetString().c_str(), bid, buyout, etime, auctionHouseEntry->houseId);
 
     SendAuctionCommandResult(AH, AUCTION_STARTED, AUCTION_OK);
 }
@@ -320,7 +320,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recv_data)
 // this function is called when client bids or buys out auction
 void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionPlaceBid");
+    DEBUG_LOG("WORLD: HandleAuctionPlaceBid");
 
     ObjectGuid auctioneerGuid;
     uint32 auctionId;
@@ -395,13 +395,13 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recv_data)
 // this void is called when auction_owner cancels his auction
 void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionRemoveItem");
+    DEBUG_LOG("WORLD: HandleAuctionRemoveItem");
 
     ObjectGuid auctioneerGuid;
     uint32 auctionId;
     recv_data >> auctioneerGuid;
     recv_data >> auctionId;
-    // //DEBUG_LOG("Cancel AUCTION AuctionID: %u", auctionId);
+    // DEBUG_LOG("Cancel AUCTION AuctionID: %u", auctionId);
 
     AuctionHouseEntry const* auctionHouseEntry = GetCheckedAuctionHouseForAuctioneer(auctioneerGuid);
     if (!auctionHouseEntry)
@@ -463,7 +463,7 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recv_data)
 // called when player lists his bids
 void WorldSession::HandleAuctionListBidderItems(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionListBidderItems");
+    DEBUG_LOG("WORLD: HandleAuctionListBidderItems");
 
     ObjectGuid auctioneerGuid;                              // NPC guid
     uint32 listfrom;                                        // page of auctions
@@ -512,7 +512,7 @@ void WorldSession::HandleAuctionListBidderItems(WorldPacket& recv_data)
 // this void sends player info about his auctions
 void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionListOwnerItems");
+    DEBUG_LOG("WORLD: HandleAuctionListOwnerItems");
 
     ObjectGuid auctioneerGuid;
     uint32 listfrom;
@@ -542,7 +542,7 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recv_data)
 // this void is called when player clicks on search button
 void WorldSession::HandleAuctionListItems(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: HandleAuctionListItems");
+    DEBUG_LOG("WORLD: HandleAuctionListItems");
 
     ObjectGuid auctioneerGuid;
     std::string searchedname;
@@ -564,7 +564,7 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recv_data)
     // always return pointer
     AuctionHouseObject* auctionHouse = sAuctionMgr.GetAuctionsMap(auctionHouseEntry);
 
-    // //DEBUG_LOG("Auctionhouse search %s list from: %u, searchedname: %s, levelmin: %u, levelmax: %u, auctionSlotID: %u, auctionMainCategory: %u, auctionSubCategory: %u, quality: %u, usable: %u",
+    // DEBUG_LOG("Auctionhouse search %s list from: %u, searchedname: %s, levelmin: %u, levelmax: %u, auctionSlotID: %u, auctionMainCategory: %u, auctionSubCategory: %u, quality: %u, usable: %u",
     //  auctioneerGuid.GetString().c_str(), listfrom, searchedname.c_str(), levelmin, levelmax, auctionSlotID, auctionMainCategory, auctionSubCategory, quality, usable);
 
     WorldPacket data(SMSG_AUCTION_LIST_RESULT, (4 + 4));

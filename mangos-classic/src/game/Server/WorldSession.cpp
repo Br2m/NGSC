@@ -167,8 +167,8 @@ void WorldSession::SendPacket(WorldPacket const& packet) const
     {
         uint64 minTime = uint64(cur_time - lastTime);
         uint64 fullTime = uint64(lastTime - firstTime);
-        //DETAIL_LOG("Send all time packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f time: %u", sendPacketCount, sendPacketBytes, float(sendPacketCount) / fullTime, float(sendPacketBytes) / fullTime, uint32(fullTime));
-        //DETAIL_LOG("Send last min packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount) / minTime, float(sendLastPacketBytes) / minTime);
+        DETAIL_LOG("Send all time packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f time: %u", sendPacketCount, sendPacketBytes, float(sendPacketCount) / fullTime, float(sendPacketBytes) / fullTime, uint32(fullTime));
+        DETAIL_LOG("Send last min packets count: " UI64FMTD " bytes: " UI64FMTD " avr.count/sec: %f avr.bytes/sec: %f", sendLastPacketCount, sendLastPacketBytes, float(sendLastPacketCount) / minTime, float(sendLastPacketBytes) / minTime);
 
         lastTime = cur_time;
         sendLastPacketCount = 1;
@@ -282,7 +282,9 @@ bool WorldSession::Update(PacketFilter& updater)
                                   packet->GetOpcode());
                     break;
                 case STATUS_UNHANDLED:
-                    //DEBUG_LOG("SESSION: received not handled opcode %s (0x%.4X)",packet->GetOpcodeName(),packet->GetOpcode());
+                    DEBUG_LOG("SESSION: received not handled opcode %s (0x%.4X)",
+                              packet->GetOpcodeName(),
+                              packet->GetOpcode());
                     break;
                 default:
                     sLog.outError("SESSION: received wrong-status-req opcode %s (0x%.4X)",
@@ -297,13 +299,14 @@ bool WorldSession::Update(PacketFilter& updater)
                           packet->GetOpcode(), GetRemoteAddress().c_str(), GetAccountId());
             if (sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
             {
-                //DEBUG_LOG("Dumping error causing packet:");
+                DEBUG_LOG("Dumping error causing packet:");
                 packet->hexlike();
             }
 
             if (sWorld.getConfig(CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET))
             {
-                //DETAIL_LOG("Disconnecting session [account id %u / address %s] for badly formatted packet.",GetAccountId(), GetRemoteAddress().c_str());
+                DETAIL_LOG("Disconnecting session [account id %u / address %s] for badly formatted packet.",
+                           GetAccountId(), GetRemoteAddress().c_str());
 
                 KickPlayer();
             }
@@ -554,7 +557,7 @@ void WorldSession::LogoutPlayer(bool save)
         stmt.PExecute(guid);
 #endif
 
-        //DEBUG_LOG("SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
+        DEBUG_LOG("SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
     }
 
     m_playerLogout = false;
@@ -632,7 +635,9 @@ const char* WorldSession::GetMangosString(int32 entry) const
 
 void WorldSession::Handle_NULL(WorldPacket& recvPacket)
 {
-	//DEBUG_LOG("SESSION: received unimplemented opcode %s (0x%.4X)",recvPacket.GetOpcodeName(),recvPacket.GetOpcode());
+    DEBUG_LOG("SESSION: received unimplemented opcode %s (0x%.4X)",
+              recvPacket.GetOpcodeName(),
+              recvPacket.GetOpcode());
 }
 
 void WorldSession::Handle_EarlyProccess(WorldPacket& recvPacket)

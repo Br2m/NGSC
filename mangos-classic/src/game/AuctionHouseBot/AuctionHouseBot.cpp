@@ -590,8 +590,8 @@ uint32 AuctionBotBuyer::GetBuyableEntry(AHB_Buyer_Config& config) const
         }
     }
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: %u items added to buyable vector for ah type: %u", count, config.GetHouseType());
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: SameItemInfo size = " SIZEFMTD, config.SameItemInfo.size());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: %u items added to buyable vector for ah type: %u", count, config.GetHouseType());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: SameItemInfo size = " SIZEFMTD, config.SameItemInfo.size());
     return count;
 }
 
@@ -607,7 +607,7 @@ void AuctionBotBuyer::PrepareListOfEntry(AHB_Buyer_Config& config) const
             ++itr;
     }
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: CheckedEntry size = " SIZEFMTD, config.CheckedEntry.size());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: CheckedEntry size = " SIZEFMTD, config.CheckedEntry.size());
 }
 
 bool AuctionBotBuyer::IsBuyableEntry(uint32 buyoutPrice, double InGame_BuyPrice, double MaxBuyablePrice, uint32 MinBuyPrice, uint32 MaxChance, uint32 ChanceRatio) const
@@ -660,10 +660,10 @@ bool AuctionBotBuyer::IsBuyableEntry(uint32 buyoutPrice, double InGame_BuyPrice,
     uint32 RandNum = urand(1, ChanceRatio);
     if (RandNum <= Chance)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: WIN BUY! Chance = %u, num = %u.", Chance, RandNum);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: WIN BUY! Chance = %u, num = %u.", Chance, RandNum);
         return true;
     }
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot:LOOSE BUY! Chance = %u, num = %u.", Chance, RandNum);
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot:LOOSE BUY! Chance = %u, num = %u.", Chance, RandNum);
     return false;
 }
 
@@ -703,25 +703,25 @@ bool AuctionBotBuyer::IsBidableEntry(uint32 bidPrice, double InGame_BuyPrice, do
     uint32 RandNum = urand(1, ChanceRatio);
     if (RandNum <= Chance)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: WIN BID! Chance = %u, num = %u.", Chance, RandNum);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: WIN BID! Chance = %u, num = %u.", Chance, RandNum);
         return true;
     }
     else
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: LOOSE BID! Chance = %u, num = %u.", Chance, RandNum);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: LOOSE BID! Chance = %u, num = %u.", Chance, RandNum);
         return false;
     }
 }
 
 void AuctionBotBuyer::PlaceBidToEntry(AuctionEntry* auction, uint32 bidPrice) const
 {
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Bid placed to entry %u, %.2fg", auction->Id, float(bidPrice) / 10000.0f);
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Bid placed to entry %u, %.2fg", auction->Id, float(bidPrice) / 10000.0f);
     auction->UpdateBid(bidPrice);
 }
 
 void AuctionBotBuyer::BuyEntry(AuctionEntry* auction) const
 {
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Entry %u buyed at %.2fg", auction->Id, float(auction->buyout) / 10000.0f);
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Entry %u buyed at %.2fg", auction->Id, float(auction->buyout) / 10000.0f);
     auction->UpdateBid(auction->buyout);
 }
 
@@ -747,7 +747,8 @@ void AuctionBotBuyer::addNewAuctionBuyerBotBid(AHB_Buyer_Config& config) const
         AuctionEntry* auction = auctionHouse->GetAuction(auctionEval.AuctionId);
         if (!auction)                                       // is auction not active now
         {
-            //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Entry %u on ah %u doesn't exists, perhaps bought already?", auctionEval.AuctionId, auction->GetHouseId());
+            DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Entry %u on ah %u doesn't exists, perhaps bought already?",
+                             auctionEval.AuctionId, auction->GetHouseId());
 
             config.CheckedEntry.erase(itr++);
             continue;
@@ -755,7 +756,7 @@ void AuctionBotBuyer::addNewAuctionBuyerBotBid(AHB_Buyer_Config& config) const
 
         if ((auctionEval.LastChecked != 0) && ((Now - auctionEval.LastChecked) <= m_CheckInterval))
         {
-            //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: In time interval wait for entry %u!", auction->Id);
+            DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: In time interval wait for entry %u!", auction->Id);
             ++itr;
             continue;
         }
@@ -821,11 +822,12 @@ void AuctionBotBuyer::addNewAuctionBuyerBotBid(AHB_Buyer_Config& config) const
 
         double MaxBidablePrice = MaxBuyablePrice - (MaxBuyablePrice / 30);  // Max Bidable price defined to 70% of max buyable price
 
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Auction added with data:");
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: MaxPrice of Entry %u is %.1fg.", auctionEval.AuctionId, MaxBuyablePrice / 10000);
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: GamePrice buy=%.1fg, bid=%.1fg.", InGame_BuyPrice / 10000, InGame_BidPrice / 10000);
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Minimal price see in AH Buy=%ug, Bid=%ug.", minBuyPrice / 10000, minBidPrice / 10000);
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Actual Entry price,  Buy=%ug, Bid=%ug.", buyoutPrice / 10000, bidPrice / 10000);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Auction added with data:");
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: MaxPrice of Entry %u is %.1fg.", auctionEval.AuctionId, MaxBuyablePrice / 10000);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: GamePrice buy=%.1fg, bid=%.1fg.", InGame_BuyPrice / 10000, InGame_BidPrice / 10000);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Minimal price see in AH Buy=%ug, Bid=%ug.",
+                         minBuyPrice / 10000, minBidPrice / 10000);
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: Actual Entry price,  Buy=%ug, Bid=%ug.", buyoutPrice / 10000, bidPrice / 10000);
 
         if (!auction->owner)                // Original auction owner
         {
@@ -861,7 +863,7 @@ bool AuctionBotBuyer::Update(AuctionHouseType houseType)
 {
     if (sAuctionBotConfig.getConfigBuyerEnabled(houseType))
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: %s buying ...", AuctionBotConfig::GetHouseTypeName(houseType));
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_BUYER, "AHBot: %s buying ...", AuctionBotConfig::GetHouseTypeName(houseType));
         if (GetBuyableEntry(m_HouseConfig[houseType]) > 0)
             addNewAuctionBuyerBotBid(m_HouseConfig[houseType]);
         return true;
@@ -1382,17 +1384,17 @@ void AuctionBotSeller::LoadSellerValues(AHB_Seller_Config& config) const
     config.SetMinTime(sAuctionBotConfig.getConfig(CONFIG_UINT32_AHBOT_MINTIME));
     config.SetMaxTime(sAuctionBotConfig.getConfig(CONFIG_UINT32_AHBOT_MAXTIME));
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: minTime = %u", config.GetMinTime());
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: maxTime = %u", config.GetMaxTime());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: minTime = %u", config.GetMinTime());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: maxTime = %u", config.GetMaxTime());
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: For AH type %u", config.GetHouseType());
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: GreyItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_GREY));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: WhiteItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_WHITE));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: GreenItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_GREEN));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: BlueItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_BLUE));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: PurpleItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_PURPLE));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: OrangeItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_ORANGE));
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: YellowItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_YELLOW));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: For AH type %u", config.GetHouseType());
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: GreyItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_GREY));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: WhiteItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_WHITE));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: GreenItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_GREEN));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: BlueItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_BLUE));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: PurpleItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_PURPLE));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: OrangeItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_ORANGE));
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: YellowItems = %u", config.GetItemsAmountPerQuality(AUCTION_QUALITY_YELLOW));
 }
 
 // Set static of items on one AH faction.
@@ -1428,10 +1430,18 @@ uint32 AuctionBotSeller::SetStat(AHB_Seller_Config& config) const
         }
     }
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Missed Item       \tGrey\tWhite\tGreen\tBlue\tPurple\tOrange\tYellow");
+    DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Missed Item       \tGrey\tWhite\tGreen\tBlue\tPurple\tOrange\tYellow");
     for (uint32 i = 0; i < MAX_ITEM_CLASS; ++i)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: %-18s\t%u\t%u\t%u\t%u\t%u\t%u\t%u", sAuctionBotConfig.GetItemClassName(ItemClass(i)), config.GetMissedItemsPerClass(AUCTION_QUALITY_GREY, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_WHITE, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_GREEN, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_BLUE, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_PURPLE, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_ORANGE, (ItemClass) i), config.GetMissedItemsPerClass(AUCTION_QUALITY_YELLOW, (ItemClass) i));
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: %-18s\t%u\t%u\t%u\t%u\t%u\t%u\t%u",
+                         sAuctionBotConfig.GetItemClassName(ItemClass(i)),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_GREY, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_WHITE, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_GREEN, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_BLUE, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_PURPLE, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_ORANGE, (ItemClass) i),
+                         config.GetMissedItemsPerClass(AUCTION_QUALITY_YELLOW, (ItemClass) i));
     }
     config.LastMissedItem = count;
     return count;
@@ -1569,14 +1579,14 @@ void AuctionBotSeller::addNewAuctions(AHB_Seller_Config& config)
 
         if (!itemID)
         {
-            //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Item entry 0 auction creating attempt.");
+            DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Item entry 0 auction creating attempt.");
             continue;
         }
 
         ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(itemID);
         if (!prototype)
         {
-            //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Unknown item %u auction creating attempt.", itemID);
+            DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: Unknown item %u auction creating attempt.", itemID);
             continue;
         }
 
@@ -1610,7 +1620,7 @@ bool AuctionBotSeller::Update(AuctionHouseType houseType)
 {
     if (sAuctionBotConfig.getConfigItemAmountRatio(houseType) > 0)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: %s selling ...", AuctionBotConfig::GetHouseTypeName(houseType));
+        DEBUG_FILTER_LOG(LOG_FILTER_AHBOT_SELLER, "AHBot: %s selling ...", AuctionBotConfig::GetHouseTypeName(houseType));
         if (SetStat(m_HouseConfig[houseType]))
             addNewAuctions(m_HouseConfig[houseType]);
         return true;

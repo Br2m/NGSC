@@ -27,37 +27,7 @@ EndScriptData
 npc_fallen_hero_of_horde
 EndContentData */
 
-/*######
-## npc_deathly_usher
-######*/
 
-#define GOSSIP_ITEM_USHER "Je souhaite affronter le Souilleur."
-
-#define SPELL_TELEPORT_SINGLE 12885
-#define SPELL_TELEPORT_SINGLE_IN_GROUP 13142
-#define SPELL_TELEPORT_GROUP 27686
-
-bool GossipHello_npc_deathly_usher(Player* pPlayer, Creature* pCreature)
-{
-	if (pPlayer->GetQuestStatus(3628) == QUEST_STATUS_INCOMPLETE && pPlayer->HasItemCount(10757, 1))
-		pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_USHER, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
-
-	pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetGUID());
-
-	return true;
-}
-
-bool GossipSelect_npc_deathly_usher(Player* pPlayer, Creature* pCreature, uint32 /*uiSender*/, uint32 uiAction)
-{
-	pPlayer->PlayerTalkClass->ClearMenus();
-	if (uiAction == GOSSIP_ACTION_INFO_DEF)
-	{
-		pPlayer->CLOSE_GOSSIP_MENU();
-		pCreature->CastSpell(pPlayer, SPELL_TELEPORT_GROUP, TRIGGERED_NONE);
-	}
-
-	return true;
-}
 
 /*######
 ## npc_fallen_hero_of_horde
@@ -150,10 +120,4 @@ void AddSC_blasted_lands()
     pNewScript->pGossipHello =  &GossipHello_npc_fallen_hero_of_horde;
     pNewScript->pGossipSelect = &GossipSelect_npc_fallen_hero_of_horde;
     pNewScript->RegisterSelf();
-
-	pNewScript = new Script;
-	pNewScript->Name = "npc_deathly_usher";
-	pNewScript->pGossipHello = &GossipHello_npc_deathly_usher;
-	pNewScript->pGossipSelect = &GossipSelect_npc_deathly_usher;
-	pNewScript->RegisterSelf();
 }

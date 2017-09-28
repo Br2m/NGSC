@@ -709,7 +709,7 @@ void GameObject::DeleteFromDB() const
 {
     if (!HasStaticDBSpawnData())
     {
-		//DEBUG_LOG("Trying to delete not saved gameobject!");
+        DEBUG_LOG("Trying to delete not saved gameobject!");
         return;
     }
 
@@ -720,6 +720,17 @@ void GameObject::DeleteFromDB() const
     WorldDatabase.PExecuteLog("DELETE FROM gameobject WHERE guid = '%u'", GetGUIDLow());
     WorldDatabase.PExecuteLog("DELETE FROM game_event_gameobject WHERE guid = '%u'", GetGUIDLow());
     WorldDatabase.PExecuteLog("DELETE FROM gameobject_battleground WHERE guid = '%u'", GetGUIDLow());
+}
+
+void GameObject::SetOwnerGuid(ObjectGuid guid)
+{
+    m_spawnedByDefault = false;                     // all object with owner is despawned after delay
+    SetGuidValue(OBJECT_FIELD_CREATED_BY, guid);
+}
+
+Unit* GameObject::GetOwner() const
+{
+    return ObjectAccessor::GetUnit(*this, GetOwnerGuid());
 }
 
 GameObjectInfo const* GameObject::GetGOInfo() const
@@ -758,11 +769,6 @@ bool GameObject::IsTransport() const
     GameObjectInfo const* gInfo = GetGOInfo();
     if (!gInfo) return false;
     return gInfo->type == GAMEOBJECT_TYPE_TRANSPORT || gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
-}
-
-Unit* GameObject::GetOwner() const
-{
-    return ObjectAccessor::GetUnit(*this, GetOwnerGuid());
 }
 
 void GameObject::SaveRespawnTime()
@@ -1130,7 +1136,7 @@ void GameObject::Use(Unit* user)
             // TODO: possible must be moved to loot release (in different from linked triggering)
             if (GetGOInfo()->chest.eventId)
             {
-				//DEBUG_LOG("Chest ScriptStart id %u for %s (opened by %s)", GetGOInfo()->chest.eventId, GetGuidStr().c_str(), user->GetGuidStr().c_str());
+                DEBUG_LOG("Chest ScriptStart id %u for %s (opened by %s)", GetGOInfo()->chest.eventId, GetGuidStr().c_str(), user->GetGuidStr().c_str());
                 StartEvents_Event(GetMap(), GetGOInfo()->chest.eventId, user, this);
             }
 
@@ -1222,7 +1228,7 @@ void GameObject::Use(Unit* user)
                     float thisDistance = player->GetDistance2d(x_i, y_i);
 
                     /* debug code. It will spawn a npc on each slot to visualize them.
-                    Creature* helper = player->SummonCreature(14496, x_i, y_i, GetPositionZ(), GetOrientation(), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 10000);
+                    Creature* helper = player->SummonCreature(14496, x_i, y_i, GetPositionZ(), GetOrientation(), TEMPSPAWN_TIMED_OR_DEAD_DESPAWN, 10000);
                     std::ostringstream output;
                     output << i << ": thisDist: " << thisDistance;
                     helper->MonsterSay(output.str().c_str(), LANG_UNIVERSAL);
@@ -1299,7 +1305,7 @@ void GameObject::Use(Unit* user)
 
                 if (info->goober.eventId)
                 {
-					////DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Goober ScriptStart id %u for %s (Used by %s).", info->goober.eventId, GetGuidStr().c_str(), player->GetGuidStr().c_str());
+                    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Goober ScriptStart id %u for %s (Used by %s).", info->goober.eventId, GetGuidStr().c_str(), player->GetGuidStr().c_str());
                     StartEvents_Event(GetMap(), info->goober.eventId, player, this);
                 }
 
@@ -1378,7 +1384,7 @@ void GameObject::Use(Unit* user)
                     int32 chance = skill - zone_skill + 5;
                     int32 roll = irand(1, 100);
 
-					//DEBUG_LOG("Fishing check (skill: %i zone min skill: %i chance %i roll: %i", skill, zone_skill, chance, roll);
+                    DEBUG_LOG("Fishing check (skill: %i zone min skill: %i chance %i roll: %i", skill, zone_skill, chance, roll);
 
                     // normal chance
                     bool success = skill >= zone_skill && chance >= roll;
@@ -1720,7 +1726,7 @@ bool GameObject::IsHostileTo(Unit const* unit) const
     if (Unit const* owner = GetOwner())
         return owner->IsHostileTo(unit);
 
-    if (Unit const* targetOwner = unit->GetCharmerOrOwner())
+    if (Unit const* targetOwner = unit->GetMaster())
         return IsHostileTo(targetOwner);
 
     // for not set faction case: be hostile towards player, not hostile towards not-players
@@ -1763,7 +1769,7 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
     if (Unit const* owner = GetOwner())
         return owner->IsFriendlyTo(unit);
 
-    if (Unit const* targetOwner = unit->GetCharmerOrOwner())
+    if (Unit const* targetOwner = unit->GetMaster())
         return IsFriendlyTo(targetOwner);
 
     // for not set faction case (wild object) use hostile case
@@ -1883,7 +1889,7 @@ void GameObject::SetLootRecipient(Unit* pUnit)
         return;
     }
 
-    Player* player = pUnit->GetCharmerOrOwnerPlayerOrPlayerItself();
+    Player* player = pUnit->GetBeneficiaryPlayer();
     if (!player)                                            // normal creature, no player involved
         return;
 
@@ -1941,7 +1947,7 @@ struct SpawnGameObjectInMapsWorker
         if (map->IsLoaded(i_data->posX, i_data->posY))
         {
             GameObject* pGameobject = new GameObject;
-            // //DEBUG_LOG("Spawning gameobject %u", *itr);
+            // DEBUG_LOG("Spawning gameobject %u", *itr);
             if (!pGameobject->LoadFromDB(i_guid, map))
             {
                 delete pGameobject;
@@ -2023,6 +2029,9 @@ void GameObject::TickCapturePoint()
             // new player entered capture point zone
             m_UniqueUsers.insert(guid);
 
+            // update pvp info
+            (*itr)->pvpInfo.inPvPCapturePoint = true;
+
             // send capture point enter packets
             (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
             (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, oldValue);
@@ -2033,9 +2042,14 @@ void GameObject::TickCapturePoint()
 
     for (GuidSet::iterator itr = tempUsers.begin(); itr != tempUsers.end(); ++itr)
     {
-        // send capture point leave packet
         if (Player* owner = GetMap()->GetPlayer(*itr))
+        {
+            // update pvp info
+            owner->pvpInfo.inPvPCapturePoint = false;
+
+            // send capture point leave packet
             owner->SendUpdateWorldState(info->capturePoint.worldState1, WORLD_STATE_REMOVE);
+        }
 
         // player left capture point zone
         m_UniqueUsers.erase(*itr);

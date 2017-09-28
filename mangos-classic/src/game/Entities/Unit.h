@@ -385,7 +385,7 @@ enum UnitState
 {
     // persistent state (applied by aura/etc until expire)
     UNIT_STAT_MELEE_ATTACKING = 0x00000001,                 // unit is melee attacking someone Unit::Attack
-    UNIT_STAT_ATTACK_PLAYER   = 0x00000002,                 // unit attack player or player's controlled unit and have contested pvpv timer setup, until timer expire, combat end and etc
+    //UNIT_STAT_ATTACK_PLAYER = 0x00000002,                 // (Deprecated) unit attack player or player's controlled unit and have contested pvpv timer setup, until timer expire, combat end and etc
     UNIT_STAT_DIED            = 0x00000004,                 // Unit::SetFeignDeath
     UNIT_STAT_STUNNED         = 0x00000008,                 // Aura::HandleAuraModStun
     UNIT_STAT_ROOT            = 0x00000010,                 // Aura::HandleAuraModRoot
@@ -409,6 +409,8 @@ enum UnitState
     UNIT_STAT_FOLLOW_MOVE     = 0x00010000,
     UNIT_STAT_FLEEING         = 0x00020000,                 // FleeMovementGenerator/TimedFleeingMovementGenerator active/onstack
     UNIT_STAT_FLEEING_MOVE    = 0x00040000,
+    UNIT_STAT_SEEKING_ASSISTANCE = 0x00080000,
+    UNIT_STAT_DONT_TURN       = 0x00100000,                 // Creature will not turn and acquire new target
     // More room for other MMGens
 
     // High-Level states (usually only with Creatures)
@@ -489,15 +491,15 @@ enum UnitFlags
     UNIT_FLAG_UNK_0                 = 0x00000001,
     UNIT_FLAG_NON_ATTACKABLE        = 0x00000002,           // not attackable
     UNIT_FLAG_NON_MOVING_DEPRECATED = 0x00000004,           // TODO: Needs research
-    UNIT_FLAG_PVP_ATTACKABLE        = 0x00000008,           // allow apply pvp rules to attackable state in addition to faction dependent state, UNIT_FLAG_UNKNOWN1 in pre-bc mangos
+    UNIT_FLAG_PLAYER_CONTROLLED     = 0x00000008,           // players, pets, totems, guardians, companions, charms, any units associated with players
     UNIT_FLAG_PET_RENAME            = 0x00000010,           // Old pet rename: moved to UNIT_FIELD_BYTES_2,2 in TBC+
     UNIT_FLAG_PET_ABANDON           = 0x00000020,           // Old pet abandon: moved to UNIT_FIELD_BYTES_2,2 in TBC+
     UNIT_FLAG_UNK_6                 = 0x00000040,
-    UNIT_FLAG_OOC_NOT_ATTACKABLE    = 0x00000100,           // (OOC Out Of Combat) Can not be attacked when not in combat. Removed if unit for some reason enter combat (flag probably removed for the attacked and it's party/group only)
-    UNIT_FLAG_PASSIVE               = 0x00000200,           // makes you unable to attack everything. Almost identical to our "civilian"-term. Will ignore it's surroundings and not engage in combat unless "called upon" or engaged by another unit.
+    UNIT_FLAG_IMMUNE_TO_PLAYER      = 0x00000100,           // Target is immune to players
+    UNIT_FLAG_IMMUNE_TO_NPC         = 0x00000200,           // makes you unable to attack everything. Almost identical to our "civilian"-term. Will ignore it's surroundings and not engage in combat unless "called upon" or engaged by another unit.
     UNIT_FLAG_PVP                   = 0x00001000,
     UNIT_FLAG_SILENCED              = 0x00002000,           // silenced, 2.1.1
-    UNIT_FLAG_UNK_14                = 0x00004000,           // 2.0.8
+    UNIT_FLAG_PERSUADED             = 0x00004000,           // persuaded, 2.0.8
     UNIT_FLAG_UNK_15                = 0x00008000,           // related to jerky movement in water?
     UNIT_FLAG_UNK_16                = 0x00010000,           // removes attackable icon
     UNIT_FLAG_PACIFIED              = 0x00020000,
@@ -882,30 +884,6 @@ enum CurrentSpellTypes
 #define CURRENT_FIRST_NON_MELEE_SPELL 1
 #define CURRENT_MAX_SPELL             4
 
-struct GlobalCooldown
-{
-    explicit GlobalCooldown(uint32 _dur = 0, uint32 _time = 0) : duration(_dur), cast_time(_time) {}
-
-    uint32 duration;
-    uint32 cast_time;
-};
-
-typedef std::unordered_map < uint32 /*category*/, GlobalCooldown > GlobalCooldownList;
-
-class GlobalCooldownMgr                                     // Shared by Player and CharmInfo
-{
-    public:
-        GlobalCooldownMgr() {}
-
-    public:
-        bool HasGlobalCooldown(SpellEntry const* spellInfo) const;
-        void AddGlobalCooldown(SpellEntry const* spellInfo, uint32 gcd);
-        void CancelGlobalCooldown(SpellEntry const* spellInfo);
-
-    private:
-        GlobalCooldownList m_GlobalCooldowns;
-};
-
 enum ActiveStates
 {
     ACT_PASSIVE  = 0x01,                                    // 0x01 - passive
@@ -1018,8 +996,6 @@ class CharmInfo
 
         CharmSpellEntry* GetCharmSpell(uint8 index) { return &(m_charmspells[index]); }
 
-        GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
-
         void SetIsRetreating(bool retreating = false) { m_retreating = retreating; }
         bool GetIsRetreating() { return m_retreating; }
 
@@ -1054,7 +1030,6 @@ class CharmInfo
         CommandStates       m_CommandState;
         ReactStates         m_reactState;
         uint32              m_petnumber;
-        GlobalCooldownMgr   m_GlobalCooldownMgr;
         uint32              m_opener;
         uint32              m_openerMinRange;
         uint32              m_openerMaxRange;
@@ -1306,7 +1281,7 @@ class Unit : public WorldObject
          * @return false if we weren't attacking already, true otherwise
          * \see Unit::m_attacking
          */
-        bool AttackStop(bool targetSwitch = false, bool includingCast = false);
+        virtual bool AttackStop(bool targetSwitch = false, bool includingCast = false, bool includingCombo = false);
         /**
          * Removes all attackers from the Unit::m_attackers set and logs it if someone that
          * wasn't attacking it was in the list. Does this check by checking if Unit::AttackStop()
@@ -1318,10 +1293,8 @@ class Unit : public WorldObject
         /// Returns the Unit::m_attackers, that stores the units that are attacking you
         AttackerSet const& getAttackers() const { return m_attackers; }
 
-        bool isAttackingPlayer() const;                     //< Returns if this unit is attacking a player (or this unit's minions/pets are attacking a player)
-
         Unit* getVictim() const { return m_attacking; }     //< Returns the victim that this unit is currently attacking
-        void CombatStop(bool includingCast = false);        //< Stop this unit from combat, if includingCast==true, also interrupt casting
+        void CombatStop(bool includingCast = false, bool includingCombo = true);        //< Stop this unit from combat, if includingCast==true, also interrupt casting
         void CombatStopWithPets(bool includingCast = false);
         void StopAttackFaction(uint32 faction_id);
         Unit* SelectRandomUnfriendlyTarget(Unit* except = nullptr, float radius = ATTACK_DISTANCE) const;
@@ -1333,13 +1306,10 @@ class Unit : public WorldObject
         void addUnitState(uint32 f) { m_state |= f; }
         bool hasUnitState(uint32 f) const { return !!(m_state & f); }
         void clearUnitState(uint32 f) { m_state &= ~f; }
-        bool CanFreeMove() const
-        {
-            return !hasUnitState(UNIT_STAT_NO_FREE_MOVE) && !GetOwnerGuid();
-        }
+        bool CanFreeMove() const { return !hasUnitState(UNIT_STAT_NO_FREE_MOVE) && !GetOwnerGuid(); }
 
         virtual uint32 GetLevelForTarget(Unit const* /*target*/) const { return getLevel(); }
-        bool IsTrivialForTarget(Unit const* unit) const;
+        bool IsTrivialForTarget(Unit const* pov) const;
 
         void SetLevel(uint32 lvl);
 
@@ -1400,8 +1370,33 @@ class Unit : public WorldObject
 
             return false;
         }
+
+        ReputationRank GetReactionTo(Unit const* unit) const override;
+        ReputationRank GetReactionTo(Corpse const* corpse) const override;
+
+        bool IsEnemy(Unit const* unit) const override;
+        bool IsFriend(Unit const* unit) const override;
+
+        bool CanAssist(Unit const* unit, bool ignoreFlags = false) const;
+        bool CanAssist(Corpse const* corpse) const;
+
+        bool CanAttack(Unit const* unit) const;
+        bool CanAttackNow(Unit const* unit) const;
+
+        bool CanCooperate(Unit const* unit) const;
+
+        bool CanInteract(GameObject const* object) const;
+        bool CanInteract(Unit const* unit) const;
+        bool CanInteractNow(Unit const* unit) const;
+
+        bool IsCivilianForTarget(Unit const* pov) const;
+
         bool IsPvP() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP); }
         void SetPvP(bool state);
+        bool IsPvPFreeForAll() const;
+        void SetPvPFreeForAll(bool state);
+        bool IsPvPContested() const;
+        void SetPvPContested(bool state);
         uint32 GetCreatureType() const;
         uint32 GetCreatureTypeMask() const
         {
@@ -1427,8 +1422,8 @@ class Unit : public WorldObject
 
         void PetOwnerKilledUnit(Unit* pVictim);
 
-        void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = nullptr);
-        void ProcDamageAndSpellFor(bool isVictim, Unit* pTarget, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, SpellEntry const* procSpell, uint32 damage);
+        void ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVictim, uint32 procEx, uint32 amount, WeaponAttackType attType = BASE_ATTACK, SpellEntry const* procSpell = nullptr, bool dontTriggerSpecial = true);
+        void ProcDamageAndSpellFor(bool isVictim, Unit* pTarget, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, SpellEntry const* procSpell, uint32 damage, bool dontTriggerSpecial);
 
         void HandleEmote(uint32 emote_id);                  // auto-select command/state
         void HandleEmoteCommand(uint32 emote_id);
@@ -1485,6 +1480,7 @@ class Unit : public WorldObject
         float CalculateEffectiveCrushChance(const Unit* victim, WeaponAttackType attType) const;
         float CalculateEffectiveGlanceChance(const Unit* victim, WeaponAttackType attType) const;
         float CalculateEffectiveDazeChance(const Unit* victim, WeaponAttackType attType) const;
+        uint32 CalculateGlanceAmount(CalcDamageInfo* meleeInfo) const;
 
         float CalculateAbilityDeflectChance(const Unit* attacker, const SpellEntry* ability) const;
 
@@ -1572,6 +1568,9 @@ class Unit : public WorldObject
         void SetInCombatState(bool PvP, Unit* enemy = nullptr);
         void SetInDummyCombatState(bool state);
         void SetInCombatWith(Unit* enemy);
+        void SetInCombatWithAggressor(Unit* aggressor);
+        void SetInCombatWithAssisted(Unit* assisted);
+        void SetInCombatWithVictim(Unit* victim);
         void ClearInCombat();
         uint32 GetCombatTimer() const { return m_CombatTimer; }
 
@@ -1603,7 +1602,7 @@ class Unit : public WorldObject
         bool isFrozen() const;
 
         bool isTargetableForAttack(bool inversAlive = false) const;
-        bool isPassiveToHostile() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE); }
+        bool isPassiveToHostile() const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC); }
 
         virtual bool IsInWater() const;
         virtual bool IsUnderWater() const;
@@ -1687,8 +1686,15 @@ class Unit : public WorldObject
         virtual void SetDeathState(DeathState s);           // overwritten in Creature/Player/Pet
 
         bool IsTargetUnderControl(Unit const& target) const;
-        ObjectGuid const& GetOwnerGuid() const { return  GetGuidValue(UNIT_FIELD_SUMMONEDBY); }
-        void SetOwnerGuid(ObjectGuid owner) { SetGuidValue(UNIT_FIELD_SUMMONEDBY, owner); }
+
+        // Owner: creator by default, summoner for pets
+        ObjectGuid const& GetOwnerGuid() const override { return GetCreatorGuid(); }
+        void SetOwnerGuid(ObjectGuid owner) override { SetCreatorGuid(owner); }
+        // Master: charmer or owner
+        ObjectGuid const& GetMasterGuid() const;
+
+        ObjectGuid const& GetSummonerGuid() const { return GetGuidValue(UNIT_FIELD_SUMMONEDBY); }
+        void SetSummonerGuid(ObjectGuid owner) { SetGuidValue(UNIT_FIELD_SUMMONEDBY, owner); }
         ObjectGuid const& GetCreatorGuid() const { return GetGuidValue(UNIT_FIELD_CREATEDBY); }
         void SetCreatorGuid(ObjectGuid creator) { SetGuidValue(UNIT_FIELD_CREATEDBY, creator); }
         ObjectGuid const& GetPetGuid() const { return GetGuidValue(UNIT_FIELD_SUMMON); }
@@ -1699,38 +1705,36 @@ class Unit : public WorldObject
         void SetCharmGuid(ObjectGuid charm) { SetGuidValue(UNIT_FIELD_CHARM, charm); }
         ObjectGuid const& GetTargetGuid() const { return GetGuidValue(UNIT_FIELD_TARGET); }
         void SetTargetGuid(ObjectGuid targetGuid) { SetGuidValue(UNIT_FIELD_TARGET, targetGuid); }
+        ObjectGuid const& GetPersuadedGuid() const { return GetGuidValue(UNIT_FIELD_PERSUADED); }
+        void SetPersuadedGuid(ObjectGuid persuaded) { SetGuidValue(UNIT_FIELD_PERSUADED, persuaded); }
         ObjectGuid const& GetChannelObjectGuid() const { return GetGuidValue(UNIT_FIELD_CHANNEL_OBJECT); }
         void SetChannelObjectGuid(ObjectGuid targetGuid) { SetGuidValue(UNIT_FIELD_CHANNEL_OBJECT, targetGuid); }
-
-        virtual Pet* GetMiniPet() const { return nullptr; }    // overwrited in Player
-
-        ObjectGuid const& GetCharmerOrOwnerGuid() const { return GetCharmerGuid() ? GetCharmerGuid() : GetOwnerGuid(); }
-        ObjectGuid const& GetCharmerOrOwnerOrOwnGuid() const
-        {
-            if (ObjectGuid const& guid = GetCharmerOrOwnerGuid())
-                return guid;
-            return GetObjectGuid();
-        }
-        bool isCharmedOwnedByPlayerOrPlayer() const { return GetCharmerOrOwnerOrOwnGuid().IsPlayer(); }
+        virtual ObjectGuid const GetSpawnerGuid() const { return ObjectGuid(); }
 
         Player* GetSpellModOwner() const;
 
-        Unit* GetOwner() const;
-        Pet* GetPet() const;
+        Unit* GetOwner(bool recursive = false) const;
+        Unit* GetMaster() const;
+
+        // Beneficiary: master or self (serverside)
+        Unit const* GetBeneficiary() const;
+        Unit* GetBeneficiary();
+        Player const* GetBeneficiaryPlayer() const;
+        Player* GetBeneficiaryPlayer();
+
+        // Controlling player: limited recursive master/beneficiary (clientside)
+        Player const* GetControllingPlayer() const;
+
+        Unit* GetSpawner() const; // serverside only logic used to determine spawner of unit
+
+        Unit* GetSummoner() const;
+        Unit* GetCreator() const;
         Unit* GetCharmer() const;
         Unit* GetCharm() const;
         virtual void Uncharm();
-        Unit* GetCharmerOrOwner() const { return GetCharmerGuid() ? GetCharmer() : GetOwner(); }
-        Unit* GetCharmerOrOwnerOrSelf()
-        {
-            if (Unit* u = GetCharmerOrOwner())
-                return u;
 
-            return this;
-        }
-        bool IsCharmerOrOwnerPlayerOrPlayerItself() const;
-        Player* GetCharmerOrOwnerPlayerOrPlayerItself();
-        Player const* GetCharmerOrOwnerPlayerOrPlayerItself() const;
+        virtual Pet* GetMiniPet() const { return nullptr; }    // overwritten in Player
+        Pet* GetPet() const;
 
         void SetPet(Pet* pet);
         void SetCharm(Unit* pet);
@@ -1809,7 +1813,6 @@ class Unit : public WorldObject
         float GetCreateStat(Stats stat) const { return m_createStats[stat]; }
 
         void SetCurrentCastedSpell(Spell* pSpell);
-        virtual void ProhibitSpellSchool(SpellSchoolMask /*idSchoolMask*/, uint32 /*unTimeMs*/) { }
         void InterruptSpell(CurrentSpellTypes spellType, bool withDelayed = true);
         void FinishSpell(CurrentSpellTypes spellType, bool ok = true);
 
@@ -1835,6 +1838,7 @@ class Unit : public WorldObject
         ShapeshiftForm GetShapeshiftForm() const { return ShapeshiftForm(GetByteValue(UNIT_FIELD_BYTES_1, 2)); }
         void  SetShapeshiftForm(ShapeshiftForm form) { SetByteValue(UNIT_FIELD_BYTES_1, 2, form); }
 
+        bool IsShapeShifted() const;
         bool IsInFeralForm() const
         {
             ShapeshiftForm form = GetShapeshiftForm();
@@ -1998,7 +2002,7 @@ class Unit : public WorldObject
         uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellEntry const* spellProto = nullptr, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1, bool flat = true);
         uint32 MeleeDamageBonusTaken(Unit* pCaster, uint32 pdamage, WeaponAttackType attType, SpellEntry const* spellProto = nullptr, DamageEffectType damagetype = DIRECT_DAMAGE, uint32 stack = 1, bool flat = true);
 
-        bool IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, SpellEntry const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, SpellProcEventEntry const*& spellProcEvent);
+        bool IsTriggeredAtSpellProcEvent(Unit* pVictim, SpellAuraHolder* holder, SpellEntry const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, SpellProcEventEntry const*& spellProcEvent, bool dontTriggerSpecial);
         // Aura proc handlers
         SpellAuraProcResult HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura* triggeredByAura, SpellEntry const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
         SpellAuraProcResult HandleHasteAuraProc(Unit* pVictim, uint32 damage, Aura* triggeredByAura, SpellEntry const* procSpell, uint32 procFlag, uint32 procEx, uint32 cooldown);
@@ -2242,6 +2246,8 @@ class Unit : public WorldObject
 
         ObjectGuid m_fixateTargetGuid;                      //< Stores the Guid of a fixated target
 
+        // Need to safeguard aura application in Unit::Update
+        bool m_spellUpdateHappening;
     private:                                                // Error traps for some wrong args using
         // this will catch and prevent build for any cases when all optional args skipped and instead triggered used non boolean type
         // no bodies expected for this declarations

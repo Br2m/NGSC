@@ -50,9 +50,9 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
     if (self->duel->startTime != 0 || opponent->duel->startTime != 0)
         return;
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: received CMSG_DUEL_ACCEPTED");
-    //DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Player 1 is: %u (%s)", self->GetGUIDLow(), self->GetName());
-    //DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Player 2 is: %u (%s)", opponent->GetGUIDLow(), opponent->GetName());
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: received CMSG_DUEL_ACCEPTED");
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Player 1 is: %u (%s)", self->GetGUIDLow(), self->GetName());
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Player 2 is: %u (%s)", opponent->GetGUIDLow(), opponent->GetName());
 
     time_t now = time(nullptr);
     self->duel->startTimer = now;
@@ -77,7 +77,7 @@ void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
     if (!opponent)
         return;
 
-	//DEBUG_LOG("WORLD: Received opcode CMSG_DUEL_CANCELLED");
+    DEBUG_LOG("WORLD: Received opcode CMSG_DUEL_CANCELLED");
 
     // If duel is in progress, then player surrendered in a duel using /forfeit
     if (self->duel->startTime != 0)

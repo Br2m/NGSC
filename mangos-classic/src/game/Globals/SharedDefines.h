@@ -348,7 +348,7 @@ enum SpellAttributesEx2
     SPELL_ATTR_EX2_UNK27                       = 0x08000000,// 27
     SPELL_ATTR_EX2_UNK28                       = 0x10000000,// 28 no breaks stealth if it fails??
     SPELL_ATTR_EX2_CANT_CRIT                   = 0x20000000,// 29 Spell can't crit
-    SPELL_ATTR_EX2_UNK30                       = 0x40000000,// 30
+    SPELL_ATTR_EX2_TRIGGERED_CAN_TRIGGER_PROC  = 0x40000000,// 30
     SPELL_ATTR_EX2_FOOD_BUFF                   = 0x80000000,// 31 Food or Drink Buff (like Well Fed)
 };
 
@@ -363,14 +363,14 @@ enum SpellAttributesEx3
     SPELL_ATTR_EX3_UNK6                        = 0x00000040,// 6
     SPELL_ATTR_EX3_STACK_FOR_DIFF_CASTERS      = 0x00000080,// 7 create a separate (de)buff stack for each caster
     SPELL_ATTR_EX3_TARGET_ONLY_PLAYER          = 0x00000100,// 8 Can target only player
-    SPELL_ATTR_EX3_UNK9                        = 0x00000200,// 9
+    SPELL_ATTR_EX3_TRIGGERED_CAN_TRIGGER_SPECIAL = 0x00000200,// 9 Can only proc auras with SPELL_ATTR_EX3_CAN_PROC_FROM_TRIGGERED_SPECIAL
     SPELL_ATTR_EX3_MAIN_HAND                   = 0x00000400,// 10 Main hand weapon required
     SPELL_ATTR_EX3_BATTLEGROUND                = 0x00000800,// 11 Can casted only on battleground
     SPELL_ATTR_EX3_CAST_ON_DEAD                = 0x00001000,// 12 target is a dead player (not every spell has this flag)
     SPELL_ATTR_EX3_DONT_DISPLAY_CHANNEL_BAR    = 0x00002000,// 13
     SPELL_ATTR_EX3_IS_HONORLESS_TARGET         = 0x00004000,// 14 "Honorless Target" only this spells have this flag
     SPELL_ATTR_EX3_UNK15                       = 0x00008000,// 15 Auto Shoot, Shoot, Throw,  - this is autoshot flag
-    SPELL_ATTR_EX3_UNK16                       = 0x00010000,// 16 no triggers effects that trigger on casting a spell??
+    SPELL_ATTR_EX3_CANT_TRIGGER_PROC           = 0x00010000,// 16 confirmed by patchnotes
     SPELL_ATTR_EX3_NO_INITIAL_AGGRO            = 0x00020000,// 17 Causes no aggro if not missed
     SPELL_ATTR_EX3_CANT_MISS                   = 0x00040000,// 18 Spell should always hit its target 
     SPELL_ATTR_EX3_UNK19                       = 0x00080000,// 19
@@ -380,7 +380,7 @@ enum SpellAttributesEx3
     SPELL_ATTR_EX3_UNK23                       = 0x00800000,// 23
     SPELL_ATTR_EX3_REQ_OFFHAND                 = 0x01000000,// 24 Req offhand weapon
     SPELL_ATTR_EX3_UNK25                       = 0x02000000,// 25 no cause spell pushback ?
-    SPELL_ATTR_EX3_UNK26                       = 0x04000000,// 26
+    SPELL_ATTR_EX3_CAN_PROC_FROM_TRIGGERED_SPECIAL = 0x04000000,// 26 Auras with this attribute can proc off SPELL_ATTR_EX3_TRIGGERED_CAN_TRIGGER_SPECIAL
     SPELL_ATTR_EX3_DRAIN_SOUL                  = 0x08000000,// 27
     SPELL_ATTR_EX3_UNK28                       = 0x10000000,// 28 always cast ok ? (requires more research)
     SPELL_ATTR_EX3_NO_DONE_BONUS               = 0x20000000,// 29
@@ -1018,7 +1018,7 @@ enum DamageEffectType
     DOT                     = 2,
     HEAL                    = 3,
     NODAMAGE                = 4,                            //< used also in case when damage applied to health but not applied to spell channelInterruptFlags/etc
-    SELF_DAMAGE_ROGUE_FALL  = 5,                            //< used to avoid rogue loosing stealth on falling damage
+    SELF_DAMAGE_ROGUE_FALL  = 5,                            //< used to avoid rogue losing stealth on falling damage
     SELF_DAMAGE             = 6
 };
 
@@ -1701,11 +1701,11 @@ enum CreatureTypeFlags
     CREATURE_TYPEFLAGS_UNK5             = 0x00000010,       // controls something in client tooltip related to creature faction
     CREATURE_TYPEFLAGS_UNK6             = 0x00000020,       // may be sound related
     CREATURE_TYPEFLAGS_UNK7             = 0x00000040,       // may be related to attackable / not attackable creatures with spells, used together with lua_IsHelpfulSpell/lua_IsHarmfulSpell
-    CREATURE_TYPEFLAGS_UNK8             = 0x00000080,       // has something to do with unit interaction / quest status requests
+    CREATURE_TYPEFLAGS_INTERACT_DEAD    = 0x00000080,       // Creature can be interacted with even if it's dead
     CREATURE_TYPEFLAGS_HERBLOOT         = 0x00000100,       // Can be looted by herbalist
     CREATURE_TYPEFLAGS_MININGLOOT       = 0x00000200,       // Can be looted by miner
     CREATURE_TYPEFLAGS_UNK11            = 0x00000400,       // no idea, but it used by client
-    CREATURE_TYPEFLAGS_UNK12            = 0x00000800,       // related to possibility to cast spells while mounted
+    CREATURE_TYPEFLAGS_MOUNTED_COMBAT   = 0x00000800,       // possibility to attack and cast spells while mounted
     CREATURE_TYPEFLAGS_CAN_ASSIST       = 0x00001000,       // Can aid any player (and group) in combat. Typically seen for escorting NPC's
     CREATURE_TYPEFLAGS_UNK14            = 0x00002000,       // checked from calls in Lua_PetHasActionBar
     CREATURE_TYPEFLAGS_UNK15            = 0x00004000,       // Lua_UnitGUID, client does guid_low &= 0xFF000000 if this flag is set
@@ -2223,10 +2223,10 @@ enum ShapeshiftForm
 
 enum ShapeshiftFormFlags
 {
-    SHAPESHIFT_FORM_FLAG_UNK1               = 0x00000001,
+    SHAPESHIFT_FORM_FLAG_ALLOW_ACTIVITY     = 0x00000001,   // Form allows various player activities, which normally cause "You can't X while shapeshifted." errors (npc/go interaction, item use, etc)
     SHAPESHIFT_FORM_FLAG_UNK2               = 0x00000002,
     SHAPESHIFT_FORM_FLAG_UNK3               = 0x00000004,
-    SHAPESHIFT_FORM_FLAG_UNK4               = 0x00000008,
+    SHAPESHIFT_FORM_FLAG_ALLOW_NPC_INTERACT = 0x00000008,   // Form unconditionally allows talking to NPCs while shapeshifted (even if other activities are disabled)
     SHAPESHIFT_FORM_FLAG_UNK5               = 0x00000010,
     SHAPESHIFT_FORM_FLAG_UNK6               = 0x00000020,
     SHAPESHIFT_FORM_FLAG_UNK7               = 0x00000040,
@@ -2513,6 +2513,7 @@ enum AreaLockStatus
     AREA_LOCKSTATUS_INSTANCE_IS_FULL            = 8,
     AREA_LOCKSTATUS_NOT_ALLOWED                 = 9,
     AREA_LOCKSTATUS_HAS_BIND                    = 10,
+    AREA_LOCKSTATUS_TOO_MANY_INSTANCE           = 11,
 };
 
 enum TrackedAuraType

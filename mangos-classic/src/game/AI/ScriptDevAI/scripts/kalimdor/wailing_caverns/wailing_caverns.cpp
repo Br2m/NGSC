@@ -152,6 +152,10 @@ struct npc_disciple_of_naralexAI : public npc_escortAI
             m_creature->SetLootRecipient(nullptr);
             m_creature->DeleteThreatList();
             m_creature->CombatStop(false);
+
+            if (m_creature->isAlive())
+                m_creature->GetMotionMaster()->MovementExpired(true);
+
             Reset();
 
             // Remove running
@@ -228,7 +232,7 @@ struct npc_disciple_of_naralexAI : public npc_escortAI
         float fX, fY, fZ;
         m_creature->GetNearPoint(m_creature, fX, fY, fZ, 0, fDistance, fAngle);
 
-        m_creature->SummonCreature(uiEntry, fX, fY, fZ, 0, TEMPSUMMON_TIMED_OOC_DESPAWN, 20000);
+        m_creature->SummonCreature(uiEntry, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_DESPAWN, 20000);
     }
 
     void UpdateEscortAI(const uint32 uiDiff) override

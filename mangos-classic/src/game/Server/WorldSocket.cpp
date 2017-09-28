@@ -77,10 +77,10 @@ void WorldSocket::SendPacket(const WorldPacket& pct, bool immediate)
 
     m_crypt.EncryptSend(reinterpret_cast<uint8 *>(&header), sizeof(header));
 
-    Write(reinterpret_cast<const char *>(&header), sizeof(header));
-
-    if (!!pct.size())
-        Write(reinterpret_cast<const char *>(pct.contents()), pct.size());
+    if (pct.size() > 0)
+        Write(reinterpret_cast<const char *>(&header), sizeof(header), reinterpret_cast<const char *>(pct.contents()), pct.size());
+    else
+        Write(reinterpret_cast<const char *>(&header), sizeof(header));
 
     if (immediate)
         ForceFlushOut();
@@ -194,7 +194,7 @@ bool WorldSocket::ProcessIncomingData()
                 return HandlePing(*pct);
 
             case CMSG_KEEP_ALIVE:
-                //DEBUG_LOG("CMSG_KEEP_ALIVE ,size: " SIZEFMTD " ", pct->size());
+                DEBUG_LOG("CMSG_KEEP_ALIVE ,size: " SIZEFMTD " ", pct->size());
 
                 return true;
 
@@ -219,13 +219,14 @@ bool WorldSocket::ProcessIncomingData()
 
         if (sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
         {
-            //DEBUG_LOG("Dumping error-causing packet:");
+            DEBUG_LOG("Dumping error-causing packet:");
             pct->hexlike();
         }
 
         if (sWorld.getConfig(CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET))
         {
-            //DETAIL_LOG("Disconnecting session [account id %i / address %s] for badly formatted packet.", m_session ? m_session->GetAccountId() : -1, GetRemoteAddress().c_str());
+            DETAIL_LOG("Disconnecting session [account id %i / address %s] for badly formatted packet.",
+                       m_session ? m_session->GetAccountId() : -1, GetRemoteAddress().c_str());
             return false;
         }
     }
@@ -252,7 +253,10 @@ bool WorldSocket::HandleAuthSession(WorldPacket &recvPacket)
     recvPacket >> clientSeed;
     recvPacket.read(digest, 20);
 
-    //DEBUG_LOG("WorldSocket::HandleAuthSession: client build %u, account %s, clientseed %X",ClientBuild,account.c_str(),clientSeed);
+    DEBUG_LOG("WorldSocket::HandleAuthSession: client build %u, account %s, clientseed %X",
+              ClientBuild,
+              account.c_str(),
+              clientSeed);
 
     // Check the version of client trying to connect
     if (!IsAcceptableClientBuild(ClientBuild))
@@ -310,7 +314,9 @@ bool WorldSocket::HandleAuthSession(WorldPacket &recvPacket)
     const char* sStr = s.AsHexStr();                        // Must be freed by OPENSSL_free()
     const char* vStr = v.AsHexStr();                        // Must be freed by OPENSSL_free()
 
-    //DEBUG_LOG("WorldSocket::HandleAuthSession: (s,v) check s: %s v: %s", sStr, vStr);
+    DEBUG_LOG("WorldSocket::HandleAuthSession: (s,v) check s: %s v: %s",
+              sStr,
+              vStr);
 
     OPENSSL_free((void*) sStr);
     OPENSSL_free((void*) vStr);
@@ -406,7 +412,9 @@ bool WorldSocket::HandleAuthSession(WorldPacket &recvPacket)
 
     const std::string &address = GetRemoteAddress();
 
-    //DEBUG_LOG("WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.",account.c_str(),address.c_str());
+    DEBUG_LOG("WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.",
+              account.c_str(),
+              address.c_str());
 
     // Update the last_ip in the database
     // No SQL injection, username escaped.

@@ -135,7 +135,7 @@ void PlayerSocial::SendFriendList()
     }
 
     plr->GetSession()->SendPacket(data);
-    //DEBUG_LOG("WORLD: Sent SMSG_FRIEND_LIST");
+    DEBUG_LOG("WORLD: Sent SMSG_FRIEND_LIST");
 }
 
 void PlayerSocial::SendIgnoreList()
@@ -158,7 +158,7 @@ void PlayerSocial::SendIgnoreList()
     }
 
     plr->GetSession()->SendPacket(data);
-    //DEBUG_LOG("WORLD: Sent SMSG_IGNORE_LIST");
+    DEBUG_LOG("WORLD: Sent SMSG_IGNORE_LIST");
 }
 
 bool PlayerSocial::HasFriend(ObjectGuid friend_guid)

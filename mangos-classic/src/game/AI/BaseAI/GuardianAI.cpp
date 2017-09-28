@@ -51,10 +51,8 @@ void GuardianAI::UpdateAI(const uint32 diff)
     {
         case REACT_AGGRESSIVE:
         case REACT_DEFENSIVE:
-			if (!m_creature->isInCombat() && owner->isInCombat())
-			{
-				AttackStart(owner->getAttackerForHelper());   // check for getAttackerForHelper() == nullpter in AttackStart()
-			}
+            if (!m_creature->isInCombat() && owner->isInCombat())
+                AttackStart(owner->getAttackerForHelper());   // check for getAttackerForHelper() == nullpter in AttackStart()
             break;
         default:
             break;
@@ -80,12 +78,12 @@ bool GuardianAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pActionInvok
     if (pHolder.Event.event_inverse_phase_mask & (1 << m_Phase))
     {
         if (!IsTimerBasedEvent(pHolder.Event.event_type))
-            //DEBUG_FILTER_LOG(LOG_FILTER_EVENT_AI_DEV, "CreatureEventAI: Event %u skipped because of phasemask %u. Current phase %u", pHolder.Event.event_id, pHolder.Event.event_inverse_phase_mask, m_Phase);
+            DEBUG_FILTER_LOG(LOG_FILTER_EVENT_AI_DEV, "CreatureEventAI: Event %u skipped because of phasemask %u. Current phase %u", pHolder.Event.event_id, pHolder.Event.event_inverse_phase_mask, m_Phase);
         return false;
     }
 
-    //if (!IsTimerBasedEvent(pHolder.Event.event_type))
-    //    LOG_PROCESS_EVENT;
+    if (!IsTimerBasedEvent(pHolder.Event.event_type))
+        LOG_PROCESS_EVENT;
 
     CreatureEventAI_Event const& event = pHolder.Event;
 
@@ -165,7 +163,8 @@ void GuardianAI::ProcessAction(CreatureEventAI_Action const& action, uint32 rnd,
     if (action.type == ACTION_T_NONE)
         return;
 
-    //DEBUG_FILTER_LOG(LOG_FILTER_EVENT_AI_DEV, "GuardianAI: Process action %u (script %u) triggered for %s (invoked by %s)", action.type, EventId, m_creature->GetGuidStr().c_str(), pActionInvoker ? pActionInvoker->GetGuidStr().c_str() : "<no invoker>");
+    DEBUG_FILTER_LOG(LOG_FILTER_EVENT_AI_DEV, "GuardianAI: Process action %u (script %u) triggered for %s (invoked by %s)",
+        action.type, EventId, m_creature->GetGuidStr().c_str(), pActionInvoker ? pActionInvoker->GetGuidStr().c_str() : "<no invoker>");
 
     CreatureEventAI::ProcessAction(action, rnd, EventId, pActionInvoker, pAIEventSender);
 }

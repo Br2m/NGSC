@@ -51,7 +51,7 @@ CreatureAI::~CreatureAI()
 
 void CreatureAI::AttackedBy(Unit* attacker)
 {
-	if (!m_unit->getVictim())
+    if (!m_unit->getVictim())
         AttackStart(attacker);
 }
 
@@ -139,7 +139,7 @@ CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32
                 pCaster->InterruptNonMeleeSpells(false);
 
             // Creature should always stop before it will cast a non-instant spell
-            if (GetSpellCastTime(pSpell))
+            if (GetSpellCastTime(pSpell) || (IsChanneledSpell(pSpell) && pSpell->ChannelInterruptFlags & CHANNEL_FLAG_MOVEMENT))
                 pCaster->StopMoving();
 
             // Creature should interrupt any current melee spell
@@ -179,10 +179,13 @@ void CreatureAI::SetCombatMovement(bool enable, bool stopOrStartMovement /*=fals
 
     if (stopOrStartMovement && m_unit->getVictim())     // Only change current movement while in combat
     {
-        if (enable)
-            m_unit->GetMotionMaster()->MoveChase(m_unit->getVictim(), m_attackDistance, m_attackAngle);
-        else if (m_unit->GetMotionMaster()->GetCurrentMovementGeneratorType() == CHASE_MOTION_TYPE)
-            m_unit->StopMoving();
+        if (!m_unit->IsIncapacitated())
+        {
+            if (enable)
+                m_unit->GetMotionMaster()->MoveChase(m_unit->getVictim(), m_attackDistance, m_attackAngle, false);
+            else if (m_unit->GetMotionMaster()->GetCurrentMovementGeneratorType() == CHASE_MOTION_TYPE)
+                m_unit->StopMoving();
+        }
     }
 }
 

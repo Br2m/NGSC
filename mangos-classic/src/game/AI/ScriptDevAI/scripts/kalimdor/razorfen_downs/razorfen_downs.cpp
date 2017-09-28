@@ -27,7 +27,7 @@ EndScriptData
 npc_belnistrasz
 EndContentData */
 
-#include "razorfen_downs.h"
+
 #include "AI/ScriptDevAI/base/escort_ai.h"
 
 /*###
@@ -52,9 +52,9 @@ enum
     NPC_WITHERED_BATTLE_BOAR        = 7333,
     NPC_WITHERED_QUILGUARD          = 7329,
     NPC_DEATHS_HEAD_GEOMANCER       = 7335,
-	//NPC_PLAGUEMAW_THE_ROTTING = 7356, // Correctif, déplacé dans razorfen_downs.h
-    
-	GO_BELNISTRASZ_BRAZIER          = 152097,
+    NPC_PLAGUEMAW_THE_ROTTING       = 7356,
+
+    GO_BELNISTRASZ_BRAZIER          = 152097,
 
     SPELL_ARCANE_INTELLECT          = 13326,                // use this somewhere (he has it as default)
     SPELL_FIREBALL                  = 9053,
@@ -78,14 +78,12 @@ struct npc_belnistraszAI : public npc_escortAI
 {
     npc_belnistraszAI(Creature* pCreature) : npc_escortAI(pCreature)
     {
-		m_pInstance = (instance_razorfen_downs*)pCreature->GetInstanceData();
-		m_uiRitualPhase = 0;
+        m_uiRitualPhase = 0;
         m_uiRitualTimer = 1000;
         m_bAggro = false;
         Reset();
     }
 
-	instance_razorfen_downs* m_pInstance;
     uint8 m_uiRitualPhase;
     uint32 m_uiRitualTimer;
     bool m_bAggro;
@@ -115,44 +113,40 @@ struct npc_belnistraszAI : public npc_escortAI
         ScriptedAI::AttackedBy(pAttacker);
     }
 
-	void SpawnerSummon(Creature* pSummoner)
-	{
-		if (m_uiRitualPhase > 9) // Correctif, ajout de phases manquantes
-		{
-			pSummoner->SummonCreature(NPC_PLAGUEMAW_THE_ROTTING, pSummoner->GetPositionX(), pSummoner->GetPositionY(), pSummoner->GetPositionZ(), pSummoner->GetOrientation(), TEMPSUMMON_TIMED_OOC_DESPAWN, 60000);
-			return;
-		}
+    void SpawnerSummon(Creature* pSummoner)
+    {
+        if (m_uiRitualPhase > 7)
+        {
+            pSummoner->SummonCreature(NPC_PLAGUEMAW_THE_ROTTING, pSummoner->GetPositionX(), pSummoner->GetPositionY(), pSummoner->GetPositionZ(), pSummoner->GetOrientation(), TEMPSPAWN_TIMED_OOC_DESPAWN, 60000);
+            return;
+        }
 
-		int i = rand()%2; // Correctif, nombre de sanglier aléatoire
-		
-		for (i; i < 4; ++i)
-		{
-			uint32 uiEntry = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            uint32 uiEntry = 0;
 
-			// ref TARGET_RANDOM_CIRCUMFERENCE_POINT
-			float angle = 2.0f * M_PI_F * rand_norm_f();
-			float fX, fZ, fY;
-			pSummoner->GetClosePoint(fX, fZ, fY, 0.0f, 2.0f, angle);
+            // ref TARGET_RANDOM_CIRCUMFERENCE_POINT
+            float angle = 2.0f * M_PI_F * rand_norm_f();
+            float fX, fZ, fY;
+            pSummoner->GetClosePoint(fX, fZ, fY, 0.0f, 2.0f, angle);
 
-			switch (i)
-			{
-			case 0: // Correctif, 2 sangliers
-				uiEntry = NPC_WITHERED_BATTLE_BOAR;
-				break;
-			case 1: // 1 sanglier
-				uiEntry = NPC_WITHERED_BATTLE_BOAR;
-				break;
-			case 2:
-				uiEntry = NPC_WITHERED_QUILGUARD;
-				break;
-			case 3:
-				uiEntry = NPC_DEATHS_HEAD_GEOMANCER;
-				break;
-			}
+            switch (i)
+            {
+                case 0:
+                case 1:
+                    uiEntry = NPC_WITHERED_BATTLE_BOAR;
+                    break;
+                case 2:
+                    uiEntry = NPC_WITHERED_QUILGUARD;
+                    break;
+                case 3:
+                    uiEntry = NPC_DEATHS_HEAD_GEOMANCER;
+                    break;
+            }
 
-			pSummoner->SummonCreature(uiEntry, fX, fZ, fY, 0.0f, TEMPSUMMON_TIMED_OOC_DESPAWN, 60000);
-		}
-	}
+            pSummoner->SummonCreature(uiEntry, fX, fZ, fY, 0.0f, TEMPSPAWN_TIMED_OOC_DESPAWN, 60000);
+        }
+    }
 
     void JustSummoned(Creature* pSummoned) override
     {
@@ -161,7 +155,7 @@ struct npc_belnistraszAI : public npc_escortAI
 
     void DoSummonSpawner(int32 iType)
     {
-        m_creature->SummonCreature(NPC_IDOL_ROOM_SPAWNER, m_fSpawnerCoord[iType][0], m_fSpawnerCoord[iType][1], m_fSpawnerCoord[iType][2], m_fSpawnerCoord[iType][3], TEMPSUMMON_TIMED_DESPAWN, 10000);
+        m_creature->SummonCreature(NPC_IDOL_ROOM_SPAWNER, m_fSpawnerCoord[iType][0], m_fSpawnerCoord[iType][1], m_fSpawnerCoord[iType][2], m_fSpawnerCoord[iType][3], TEMPSPAWN_TIMED_DESPAWN, 10000);
     }
 
     void WaypointReached(uint32 uiPointId) override
@@ -170,7 +164,6 @@ struct npc_belnistraszAI : public npc_escortAI
         {
             DoScriptText(SAY_BELNISTRASZ_START_RIT, m_creature);
             SetEscortPaused(true);
-			m_pInstance->SetData(TYPE_PLAGUEMAW_THE_ROTTING, IN_PROGRESS); // Correctif, l'event ne doit pas se finir tant que le boss n'est pas down
         }
     }
 
@@ -178,61 +171,52 @@ struct npc_belnistraszAI : public npc_escortAI
     {
         if (HasEscortState(STATE_ESCORT_PAUSED))
         {
-			if (m_uiRitualTimer < uiDiff)
+            if (m_uiRitualTimer < uiDiff)
             {
-				switch (m_uiRitualPhase)
+                switch (m_uiRitualPhase)
                 {
-                    // Correctif, ajout d'une vague manquant, correction des timers
-					case 0:
+                    case 0:
                         DoCastSpellIfCan(m_creature, SPELL_IDOL_SHUTDOWN);
-						DoSummonSpawner(irand(1, 3)); // 1ere vague
-                        m_uiRitualTimer = 35000;
+                        m_uiRitualTimer = 1000;
                         break;
                     case 1:
-                        DoSummonSpawner(irand(1, 3)); // 2eme vague
-                        m_uiRitualTimer = 4000;
+                        DoSummonSpawner(irand(1, 3));
+                        m_uiRitualTimer = 39000;
                         break;
-					case 2:
-						DoScriptText(SAY_BELNISTRASZ_3_MIN, m_creature, m_creature);
-						m_uiRitualTimer = 31000;
-						break;
-                    case 3:
-                        DoSummonSpawner(irand(1, 3)); // 3eme vague
-                        m_uiRitualTimer = 35000;
-                        break;
-                    case 4:
-                        DoSummonSpawner(irand(1, 3)); // 4eme vague
-                        m_uiRitualTimer = 13000;
-                        break;
-                    case 5:
-                        DoScriptText(SAY_BELNISTRASZ_2_MIN, m_creature, m_creature);
+                    case 2:
+                        DoSummonSpawner(irand(1, 3));
                         m_uiRitualTimer = 20000;
                         break;
-                    case 6:
-                        DoSummonSpawner(irand(1, 3)); //5eme vague
-                        m_uiRitualTimer = 35000;
+                    case 3:
+                        DoScriptText(SAY_BELNISTRASZ_3_MIN, m_creature, m_creature);
+                        m_uiRitualTimer = 20000;
                         break;
-					case 7:
-						DoSummonSpawner(irand(1, 3)); //6eme vague
-						m_uiRitualTimer = 20000;
-						break; 
-					case 8:
+                    case 4:
+                        DoSummonSpawner(irand(1, 3));
+                        m_uiRitualTimer = 40000;
+                        break;
+                    case 5:
+                        DoSummonSpawner(irand(1, 3));
+                        DoScriptText(SAY_BELNISTRASZ_2_MIN, m_creature, m_creature);
+                        m_uiRitualTimer = 40000;
+                        break;
+                    case 6:
+                        DoSummonSpawner(irand(1, 3));
+                        m_uiRitualTimer = 20000;
+                        break;
+                    case 7:
                         DoScriptText(SAY_BELNISTRASZ_1_MIN, m_creature, m_creature);
                         m_uiRitualTimer = 40000;
                         break;
-                    case 9:
-                        DoSummonSpawner(irand(1, 3)); //7eme vague
-                        m_uiRitualTimer = 12000;
+                    case 8:
+                        DoSummonSpawner(irand(1, 3));
+                        m_uiRitualTimer = 20000;
                         break;
-					case 10:
-						DoSummonSpawner(irand(1, 3)); //Boss
-						m_uiRitualTimer = 3000;
-						break;
-                    case 11:
+                    case 9:
                         DoScriptText(SAY_BELNISTRASZ_FINISH, m_creature, m_creature);
                         m_uiRitualTimer = 3000;
                         break;
-                    case 12:
+                    case 10:
                     {
                         if (Player* pPlayer = GetPlayerForEscort())
                         {
@@ -253,12 +237,11 @@ struct npc_belnistraszAI : public npc_escortAI
                         break;
                     }
                 }
+
                 ++m_uiRitualPhase;
             }
-			else if((!(m_uiRitualPhase == 11)) || (m_pInstance && m_pInstance->GetData(TYPE_PLAGUEMAW_THE_ROTTING) == DONE)) //Correctif, empêche l'event de s'achever tant que le boss n'est pas down
-			{
-				m_uiRitualTimer -= uiDiff;
-			}
+            else
+                m_uiRitualTimer -= uiDiff;
 
             return;
         }

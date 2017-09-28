@@ -35,7 +35,7 @@
 #include "Mails/Mail.h"
 #include "Util.h"
 #include "Spells/SpellMgr.h"
-#ifdef _//DEBUG_VMAPS
+#ifdef _DEBUG_VMAPS
 #include "VMapFactory.h"
 #endif
 
@@ -332,9 +332,18 @@ bool ChatHandler::HandleGPSCommand(char* args)
                     cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), obj->GetInstanceId(),
                     zone_x, zone_y, ground_z, floor_z, have_map, have_vmap);
 
-    //DEBUG_LOG("Player %s GPS call for %s '%s' (%s: %u):", m_session ? GetNameLink().c_str() : GetMangosString(LANG_CONSOLE_COMMAND), (obj->GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), obj->GetName(), (obj->GetTypeId() == TYPEID_PLAYER ? "GUID" : "Entry"), (obj->GetTypeId() == TYPEID_PLAYER ? obj->GetGUIDLow() : obj->GetEntry()));
+    DEBUG_LOG("Player %s GPS call for %s '%s' (%s: %u):",
+              m_session ? GetNameLink().c_str() : GetMangosString(LANG_CONSOLE_COMMAND),
+              (obj->GetTypeId() == TYPEID_PLAYER ? "player" : "creature"), obj->GetName(),
+              (obj->GetTypeId() == TYPEID_PLAYER ? "GUID" : "Entry"), (obj->GetTypeId() == TYPEID_PLAYER ? obj->GetGUIDLow() : obj->GetEntry()));
 
-    //DEBUG_LOG(GetMangosString(LANG_MAP_POSITION), obj->GetMapId(), (mapEntry ? mapEntry->name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),zone_id, (zoneEntry ? zoneEntry->area_name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),area_id, (areaEntry ? areaEntry->area_name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), obj->GetInstanceId(),zone_x, zone_y, ground_z, floor_z, have_map, have_vmap);
+    DEBUG_LOG(GetMangosString(LANG_MAP_POSITION),
+              obj->GetMapId(), (mapEntry ? mapEntry->name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),
+              zone_id, (zoneEntry ? zoneEntry->area_name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),
+              area_id, (areaEntry ? areaEntry->area_name[sWorld.GetDefaultDbcLocale()] : "<unknown>"),
+              obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), obj->GetOrientation(),
+              cell.GridX(), cell.GridY(), cell.CellX(), cell.CellY(), obj->GetInstanceId(),
+              zone_x, zone_y, ground_z, floor_z, have_map, have_vmap);
 
     GridMapLiquidData liquid_status;
     GridMapLiquidStatus res = terrain->getLiquidStatus(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), MAP_ALL_LIQUIDS, &liquid_status);
@@ -749,7 +758,7 @@ bool ChatHandler::HandleModifyEnergyCommand(char* args)
     chr->SetMaxPower(POWER_ENERGY, energym);
     chr->SetPower(POWER_ENERGY, energy);
 
-    //DETAIL_LOG(GetMangosString(LANG_CURRENT_ENERGY), chr->GetMaxPower(POWER_ENERGY));
+    DETAIL_LOG(GetMangosString(LANG_CURRENT_ENERGY), chr->GetMaxPower(POWER_ENERGY));
 
     return true;
 }
@@ -1423,7 +1432,7 @@ bool ChatHandler::HandleModifyMoneyCommand(char* args)
     {
         int32 newmoney = int32(moneyuser) + addmoney;
 
-        //DETAIL_LOG(GetMangosString(LANG_CURRENT_MONEY), moneyuser, addmoney, newmoney);
+        DETAIL_LOG(GetMangosString(LANG_CURRENT_MONEY), moneyuser, addmoney, newmoney);
         if (newmoney <= 0)
         {
             PSendSysMessage(LANG_YOU_TAKE_ALL_MONEY, GetNameLink(chr).c_str());
@@ -1455,7 +1464,7 @@ bool ChatHandler::HandleModifyMoneyCommand(char* args)
             chr->ModifyMoney(addmoney);
     }
 
-    //DETAIL_LOG(GetMangosString(LANG_NEW_MONEY), moneyuser, addmoney, chr->GetMoney());
+    DETAIL_LOG(GetMangosString(LANG_NEW_MONEY), moneyuser, addmoney, chr->GetMoney());
 
     return true;
 }

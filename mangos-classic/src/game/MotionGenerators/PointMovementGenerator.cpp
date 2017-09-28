@@ -19,7 +19,7 @@
 #include "PointMovementGenerator.h"
 #include "Entities/Creature.h"
 #include "AI/BaseAI/CreatureAI.h"
-#include "Entities/TemporarySummon.h"
+#include "Entities/TemporarySpawn.h"
 #include "World/World.h"
 #include "Movement/MoveSplineInit.h"
 #include "Movement/MoveSpline.h"
@@ -90,9 +90,8 @@ void PointMovementGenerator<Creature>::MovementInform(Creature& unit)
 
     if (unit.IsTemporarySummon())
     {
-        TemporarySummon* pSummon = (TemporarySummon*)(&unit);
-        if (pSummon->GetSummonerGuid().IsCreature())
-            if (Creature* pSummoner = unit.GetMap()->GetCreature(pSummon->GetSummonerGuid()))
+        if (unit.GetSpawnerGuid().IsCreatureOrPet())
+            if (Creature* pSummoner = unit.GetMap()->GetAnyTypeCreature(unit.GetSpawnerGuid()))
                 if (pSummoner->AI())
                     pSummoner->AI()->SummonedMovementInform(&unit, POINT_MOTION_TYPE, id);
     }
@@ -109,9 +108,15 @@ template void PointMovementGenerator<Creature>::Reset(Creature&);
 template bool PointMovementGenerator<Player>::Update(Player&, const uint32& diff);
 template bool PointMovementGenerator<Creature>::Update(Creature&, const uint32& diff);
 
+void AssistanceMovementGenerator::Initialize(Creature& unit)
+{
+    unit.addUnitState(UNIT_STAT_SEEKING_ASSISTANCE);
+    PointMovementGenerator::Initialize(unit);
+}
+
 void AssistanceMovementGenerator::Finalize(Unit& unit)
 {
-    unit.clearUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
+    unit.clearUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE | UNIT_STAT_SEEKING_ASSISTANCE);
 
     ((Creature*)&unit)->SetNoCallAssistance(false);
     ((Creature*)&unit)->CallAssistance();

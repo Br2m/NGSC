@@ -28,7 +28,7 @@ void WorldSession::HandleAttackSwingOpcode(WorldPacket& recv_data)
     ObjectGuid guid;
     recv_data >> guid;
 
-	////DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Received opcode CMSG_ATTACKSWING %s", guid.GetString().c_str());
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Received opcode CMSG_ATTACKSWING %s", guid.GetString().c_str());
 
     if (!guid.IsUnit())
     {
@@ -77,7 +77,7 @@ void WorldSession::HandleSetSheathedOpcode(WorldPacket& recv_data)
     uint32 sheathed;
     recv_data >> sheathed;
 
-	//DEBUG_LOG("WORLD: Received opcode CMSG_SETSHEATHED for %s - value: %u", GetPlayer()->GetGuidStr().c_str(), sheathed);
+    DEBUG_LOG("WORLD: Received opcode CMSG_SETSHEATHED for %s - value: %u", GetPlayer()->GetGuidStr().c_str(), sheathed);
 
     if (sheathed >= MAX_SHEATH_STATE)
     {
