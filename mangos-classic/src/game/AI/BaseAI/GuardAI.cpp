@@ -57,7 +57,7 @@ void GuardAI::EnterEvadeMode()
 {
     if (!m_creature->isAlive())
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking because he's dead [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking because he's dead [guid=%u]", m_creature->GetGUIDLow());
         m_creature->StopMoving();
         m_creature->GetMotionMaster()->MoveIdle();
 
@@ -73,23 +73,23 @@ void GuardAI::EnterEvadeMode()
 
     if (!victim)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, no victim [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, no victim [guid=%u]", m_creature->GetGUIDLow());
     }
     else if (!victim->isAlive())
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is dead [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is dead [guid=%u]", m_creature->GetGUIDLow());
     }
     else if (victim->HasStealthAura())
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is in stealth [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is in stealth [guid=%u]", m_creature->GetGUIDLow());
     }
     else if (victim->IsTaxiFlying())
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is in flight [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim is in flight [guid=%u]", m_creature->GetGUIDLow());
     }
     else
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim out run him [guid=%u]", m_creature->GetGUIDLow());
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Creature stopped attacking, victim out run him [guid=%u]", m_creature->GetGUIDLow());
     }
 
     m_creature->RemoveAllAurasOnEvade();
@@ -138,6 +138,6 @@ void GuardAI::AttackStart(Unit* u)
 
 void GuardAI::JustDied(Unit* killer)
 {
-    if (Player* pkiller = killer->GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (Player* pkiller = killer->GetBeneficiaryPlayer())
         m_creature->SendZoneUnderAttackMessage(pkiller);
 }

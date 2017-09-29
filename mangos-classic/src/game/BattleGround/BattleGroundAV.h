@@ -26,7 +26,7 @@
 
 #define BG_AV_BOSS_KILL_QUEST_SPELL         23658
 
-#define BG_AV_CAPTIME                       300000          // ANCIEN 4 minutes NOUVEAU 5 minutes
+#define BG_AV_CAPTIME                       300000          // Correctif : ANCIEN 4 minutes NOUVEAU 5 minutes
 #define BG_AV_SNOWFALL_FIRSTCAP             300000          // 5 minutes but i also have seen 4:05
 
 #define BG_AV_SCORE_INITIAL_POINTS          600

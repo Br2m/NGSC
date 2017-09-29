@@ -46,7 +46,10 @@ class DynamicObject : public WorldObject
         uint32 GetSpellId() const { return m_spellId; }
         SpellEffectIndex GetEffIndex() const { return m_effIndex; }
         uint32 GetDuration() const { return m_aliveDuration; }
+        ObjectGuid const& GetOwnerGuid() const override { return GetCasterGuid(); }
+        void SetOwnerGuid(ObjectGuid guid) override { SetCasterGuid(guid); }
         ObjectGuid const& GetCasterGuid() const { return GetGuidValue(DYNAMICOBJECT_CASTER); }
+        void SetCasterGuid(ObjectGuid guid) { SetGuidValue(DYNAMICOBJECT_CASTER, guid); }
         Unit* GetCaster() const;
         float GetRadius() const { return m_radius; }
         DynamicObjectType GetType() const { return (DynamicObjectType)GetByteValue(DYNAMICOBJECT_BYTES, 0); }
@@ -57,6 +60,11 @@ class DynamicObject : public WorldObject
 
         bool IsHostileTo(Unit const* unit) const override;
         bool IsFriendlyTo(Unit const* unit) const override;
+
+        ReputationRank GetReactionTo(Unit const* unit) const override;
+
+        bool IsEnemy(Unit const* unit) const override;
+        bool IsFriend(Unit const* unit) const override;
 
         float GetObjectBoundingRadius() const override      // overwrite WorldObject version
         {

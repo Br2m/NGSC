@@ -71,7 +71,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
         return;
     }
 
-    //DEBUG_LOG("CHAT: packet received. type %u, lang %u", type, lang);
+    DEBUG_LOG("CHAT: packet received. type %u, lang %u", type, lang);
 
     // prevent talking at unknown language (cheating)
     LanguageDesc const* langDesc = GetLanguageDescByID(lang);
@@ -590,7 +590,7 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recv_data)
 void WorldSession::HandleChatIgnoredOpcode(WorldPacket& recv_data)
 {
     ObjectGuid iguid;
-    // //DEBUG_LOG("WORLD: Received opcode CMSG_CHAT_IGNORED");
+    // DEBUG_LOG("WORLD: Received opcode CMSG_CHAT_IGNORED");
 
     recv_data >> iguid;
 

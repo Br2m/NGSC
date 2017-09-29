@@ -45,7 +45,7 @@ GroupMemberStatus GetGroupMemberStatus(const Player *member = nullptr)
             flags |= MEMBER_STATUS_DEAD;
         if (member->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
             flags |= MEMBER_STATUS_GHOST;
-        if (member->IsFFAPvP())
+        if (member->IsPvPFreeForAll())
             flags |= MEMBER_STATUS_PVP_FFA;
         if (member->isAFK())
             flags |= MEMBER_STATUS_AFK;
@@ -69,7 +69,7 @@ Group::~Group()
 {
     if (m_bgGroup)
     {
-        //DEBUG_LOG("Group::~Group: battleground group being deleted.");
+        DEBUG_LOG("Group::~Group: battleground group being deleted.");
         if (m_bgGroup->GetBgRaid(ALLIANCE) == this)
             m_bgGroup->SetBgRaid(ALLIANCE, nullptr);
         else if (m_bgGroup->GetBgRaid(HORDE) == this)
@@ -733,7 +733,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, bool isAssistant, uint
                     player->m_InstanceValid = true;
         }
 
-        if (player->IsFFAPvP())
+        if (player->IsPvPFreeForAll())
         {
             player->ForceHealthAndPowerUpdate();
             for (GroupReference* itr = GetFirstMember(); itr != nullptr; itr = itr->next())
@@ -1245,10 +1245,9 @@ InstanceGroupBind* Group::BindToInstance(DungeonPersistentState* state, bool per
 
         bind.state = state;
         bind.perm = permanent;
-		if (!load)
-		{
-			//DEBUG_LOG("Group::BindToInstance: Group (Id: %d) is now bound to map %d, instance %d", GetId(), state->GetMapId(), state->GetInstanceId());
-		}
+        if (!load)
+            DEBUG_LOG("Group::BindToInstance: Group (Id: %d) is now bound to map %d, instance %d",
+                      GetId(), state->GetMapId(), state->GetInstanceId());
         return &bind;
     }
     else
@@ -1332,7 +1331,7 @@ static void RewardGroupAtKill_helper(Player* pGroupGuy, Unit* pVictim, uint32 co
  */
 void Group::RewardGroupAtKill(Unit* pVictim, Player* player_tap)
 {
-    bool PvP = pVictim->isCharmedOwnedByPlayerOrPlayer();
+    bool PvP = pVictim->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
     // prepare data for near group iteration (PvP and !PvP cases)
     uint32 count = 0;

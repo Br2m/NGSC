@@ -89,6 +89,8 @@ float World::m_VisibleObjectGreyDistance      = 0;
 float  World::m_relocation_lower_limit_sq     = 10.f * 10.f;
 uint32 World::m_relocation_ai_notify_delay    = 1000u;
 
+TimePoint World::m_currentTime = TimePoint();
+
 /// World constructor
 World::World(): mail_timer(0), mail_timer_expires(0)
 {
@@ -227,7 +229,7 @@ World::AddSession_(WorldSession* s)
     {
         AddQueuedSession(s);
         UpdateMaxSessionCounters();
-        //DETAIL_LOG("PlayerQueue: Account id %u is in Queue Position (%u).", s->GetAccountId(), ++QueueSize);
+        DETAIL_LOG("PlayerQueue: Account id %u is in Queue Position (%u).", s->GetAccountId(), ++QueueSize);
         return;
     }
 
@@ -253,7 +255,7 @@ World::AddSession_(WorldSession* s)
         SqlStatement stmt = LoginDatabase.CreateStatement(id, "UPDATE realmlist SET population = ? WHERE id = ?");
         stmt.PExecute(popu, realmID);
 
-        //DETAIL_LOG("Server Population (%f).", popu);
+        DETAIL_LOG("Server Population (%f).", popu);
     }
 }
 
@@ -1087,9 +1089,27 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading Npc Text Id...");
     sObjectMgr.LoadNpcGossips();                            // must be after load Creature and LoadGossipText
 
-    sLog.outString("Loading Gossip scripts...");
+    sLog.outString("Loading Scripts random templates...");  // must be before String calls
+    sScriptMgr.LoadDbScriptRandomTemplates();
+                                                            ///- Load and initialize DBScripts Engine
+    sLog.outString("Loading DB-Scripts Engine...");
+    sScriptMgr.LoadRelayScripts();                          // must be first in dbscripts loading
     sScriptMgr.LoadGossipScripts();                         // must be before gossip menu options
+    sScriptMgr.LoadQuestStartScripts();                     // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
+    sScriptMgr.LoadQuestEndScripts();                       // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
+    sScriptMgr.LoadSpellScripts();                          // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadGameObjectScripts();                     // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadGameObjectTemplateScripts();             // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadEventScripts();                          // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadCreatureDeathScripts();                  // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadCreatureMovementScripts();               // before loading from creature_movement
+    sLog.outString(">>> Scripts loaded");
+    sLog.outString();
 
+    sLog.outString("Loading Scripts text locales...");      // must be after Load*Scripts calls
+    sScriptMgr.LoadDbScriptStrings();
+
+    sLog.outString("Loading Gossip Menus...");
     sObjectMgr.LoadGossipMenus();
 
     sLog.outString("Loading Vendors...");
@@ -1100,8 +1120,7 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadTrainerTemplates();                      // must be after load CreatureTemplate
     sObjectMgr.LoadTrainers();                              // must be after load CreatureTemplate, TrainerTemplate
 
-    sLog.outString("Loading Waypoint scripts...");          // before loading from creature_movement
-    sScriptMgr.LoadCreatureMovementScripts();
+    sLog.outString("Loading Waypoint scripts...");          
 
     sLog.outString("Loading Waypoints...");
     sWaypointMgr.Load();
@@ -1121,6 +1140,9 @@ void World::SetInitialWorldSettings()
     sLog.outString("Loading GameTeleports...");
     sObjectMgr.LoadGameTele();
 
+    sLog.outString("Loading Questgiver Greetings...");
+    sObjectMgr.LoadQuestgiverGreeting();
+
     ///- Loading localization data
     sLog.outString("Loading Localization strings...");
     sObjectMgr.LoadCreatureLocales();                       // must be after CreatureInfo loading
@@ -1131,6 +1153,7 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadPageTextLocales();                       // must be after PageText loading
     sObjectMgr.LoadGossipMenuItemsLocales();                // must be after gossip menu items loading
     sObjectMgr.LoadPointOfInterestLocales();                // must be after POI loading
+    sObjectMgr.LoadQuestgiverGreetingLocales();
     sLog.outString(">>> Localization strings loaded");
     sLog.outString();
 
@@ -1152,21 +1175,6 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading GM tickets...");
     sTicketMgr.LoadGMTickets();
-
-    ///- Load and initialize DBScripts Engine
-    sLog.outString("Loading DB-Scripts Engine...");
-    sScriptMgr.LoadQuestStartScripts();                     // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
-    sScriptMgr.LoadQuestEndScripts();                       // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
-    sScriptMgr.LoadSpellScripts();                          // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadGameObjectScripts();                     // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadGameObjectTemplateScripts();             // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadEventScripts();                          // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadCreatureDeathScripts();                  // must be after load Creature/Gameobject(Template/Data)
-    sLog.outString(">>> Scripts loaded");
-    sLog.outString();
-
-    sLog.outString("Loading Scripts text locales...");      // must be after Load*Scripts calls
-    sScriptMgr.LoadDbScriptStrings();
 
     ///- Load and initialize EventAI Scripts
     sLog.outString("Loading CreatureEventAI Texts...");
@@ -1230,7 +1238,7 @@ void World::SetInitialWorldSettings()
     mail_timer = uint32((((localtime(&m_gameTime)->tm_hour + 20) % 24) * HOUR * IN_MILLISECONDS) / m_timers[WUPDATE_AUCTIONS].GetInterval());
     // 1440
     mail_timer_expires = uint32((DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
-    //DEBUG_LOG("Mail timer set to: %u, mail return is called every %u minutes", mail_timer, mail_timer_expires);
+    DEBUG_LOG("Mail timer set to: %u, mail return is called every %u minutes", mail_timer, mail_timer_expires);
 
     ///- Initialize static helper structures
     AIRegistry::Initialize();
@@ -1341,6 +1349,8 @@ void World::DetectDBCLang()
 /// Update the World !
 void World::Update(uint32 diff)
 {
+    m_currentTime = std::chrono::time_point_cast<std::chrono::milliseconds>(Clock::now());
+
     ///- Update the different timers
     for (int i = 0; i < WUPDATE_COUNT; ++i)
     {
@@ -1777,7 +1787,7 @@ void World::ShutdownMsg(bool show /*= false*/, Player* player /*= nullptr*/)
         ServerMessageType msgid = (m_ShutdownMask & SHUTDOWN_MASK_RESTART) ? SERVER_MSG_RESTART_TIME : SERVER_MSG_SHUTDOWN_TIME;
 
         SendServerMessage(msgid, str.c_str(), player);
-        //DEBUG_LOG("Server is %s in %s", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutting down"), str.c_str());
+        DEBUG_LOG("Server is %s in %s", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutting down"), str.c_str());
     }
 }
 
@@ -1795,7 +1805,7 @@ void World::ShutdownCancel()
     m_ExitCode = SHUTDOWN_EXIT_CODE;                       // to default value
     SendServerMessage(msgid);
 
-    //DEBUG_LOG("Server %s cancelled.", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
+    DEBUG_LOG("Server %s cancelled.", (m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
 }
 
 void World::UpdateSessions(uint32 /*diff*/)
@@ -1853,7 +1863,7 @@ void World::InitServerMaintenanceCheck()
     QueryResult* result = CharacterDatabase.Query("SELECT NextMaintenanceDate FROM saved_variables");
     if (!result)
     {
-        //DEBUG_LOG("Maintenance date not found in SavedVariables, reseting it now.");
+        DEBUG_LOG("Maintenance date not found in SavedVariables, reseting it now.");
         uint32 mDate = GetDateLastMaintenanceDay();
         m_NextMaintenanceDate = mDate == GetDateToday() ?  mDate : mDate + 7;
         CharacterDatabase.PExecute("INSERT INTO saved_variables (NextMaintenanceDate) VALUES ('" UI64FMTD "')", uint64(m_NextMaintenanceDate));
@@ -1867,7 +1877,7 @@ void World::InitServerMaintenanceCheck()
     if (m_NextMaintenanceDate <= GetDateToday())
         ServerMaintenanceStart();
 
-    //DEBUG_LOG("Server maintenance check initialized.");
+    DEBUG_LOG("Server maintenance check initialized.");
 }
 
 // This handles the issued and queued CLI/RA commands
@@ -1880,7 +1890,7 @@ void World::ProcessCliCommands()
         auto const command = m_cliCommandQueue.front();
         m_cliCommandQueue.pop_front();
 
-        //DEBUG_LOG("CLI command under processing...");
+        DEBUG_LOG("CLI command under processing...");
 
         CliHandler handler(command->m_cliAccountId, command->m_cliAccessLevel, command->m_print);
         handler.ParseCommands(&command->m_command[0]);

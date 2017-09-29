@@ -99,7 +99,8 @@ void DoOrSimulateScriptTextForMap(int32 iTextEntry, uint32 uiCreatureEntry, Map*
         return;
     }
 
-    //DEBUG_log("SD2: DoOrSimulateScriptTextForMap: text entry=%i, Sound=%u, Type=%u, Language=%u, Emote=%u", iTextEntry, pData->SoundId, pData->Type, pData->LanguageId, pData->Emote);
+    debug_log("SD2: DoOrSimulateScriptTextForMap: text entry=%i, Sound=%u, Type=%u, Language=%u, Emote=%u",
+        iTextEntry, pData->SoundId, pData->Type, pData->LanguageId, pData->Emote);
 
     if (pData->Type != CHAT_TYPE_ZONE_YELL)
     {
@@ -161,7 +162,7 @@ bool ScriptDevAIMgr::OnGossipHello(Player* pPlayer, GameObject* pGo)
 
 bool ScriptDevAIMgr::OnGossipSelect(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction, const char* code)
 {
-    //DEBUG_log("SD2: Gossip selection, sender: %u, action: %u", uiSender, uiAction);
+    debug_log("SD2: Gossip selection, sender: %u, action: %u", uiSender, uiAction);
 
     Script* pTempScript = GetScript(pCreature->GetScriptId());
 
@@ -186,7 +187,7 @@ bool ScriptDevAIMgr::OnGossipSelect(Player* pPlayer, Creature* pCreature, uint32
 
 bool ScriptDevAIMgr::OnGossipSelect(Player* pPlayer, GameObject* pGo, uint32 uiSender, uint32 uiAction, const char* code)
 {
-    //DEBUG_log("SD2: GO Gossip selection, sender: %u, action: %u", uiSender, uiAction);
+    debug_log("SD2: GO Gossip selection, sender: %u, action: %u", uiSender, uiAction);
 
     Script* pTempScript = GetScript(pGo->GetGOInfo()->ScriptId);
 

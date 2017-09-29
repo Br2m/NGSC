@@ -821,10 +821,9 @@ inline bool IsPositiveEffectTargetMode(const SpellEntry* entry, SpellEffectIndex
 
     // If we ever get to this point, we have unhandled target. Gotta say something about it.
     if (entry->Effect[effIndex])
-	{
-		//DETAIL_LOG("IsPositiveEffectTargetMode: Spell %u's effect %u has unhandled targets (A:%u B:%u)", entry->Id, effIndex, entry->EffectImplicitTargetA[effIndex], entry->EffectImplicitTargetB[effIndex]);
-	}
-        return true;
+        DETAIL_LOG("IsPositiveEffectTargetMode: Spell %u's effect %u has unhandled targets (A:%u B:%u)", entry->Id, effIndex,
+                   entry->EffectImplicitTargetA[effIndex], entry->EffectImplicitTargetB[effIndex]);
+    return true;
 }
 
 inline bool IsPositiveEffect(const SpellEntry* spellproto, SpellEffectIndex effIndex, const WorldObject* caster = nullptr, const WorldObject* target = nullptr)
@@ -882,11 +881,6 @@ inline bool IsPositiveEffect(const SpellEntry* spellproto, SpellEffectIndex effI
         default:
             break;
     }
-
-    // Attributes check first: always negative if forced
-    // Do not move: this check needs to be present there to let override above it happen for spells that need it.
-    if (spellproto->HasAttribute(SPELL_ATTR_NEGATIVE))
-        return false;
 
     // Generic effect check: negative on negative targets, positive on positive targets
     return IsPositiveEffectTargetMode(spellproto, effIndex, caster, target);
@@ -1262,7 +1256,7 @@ inline bool IsStackableAuraEffect(SpellEntry const* entry, SpellEntry const* ent
         // DoT
         case SPELL_AURA_PERIODIC_LEECH:
         case SPELL_AURA_PERIODIC_MANA_LEECH:
-            if (pTarget && pTarget->IsCharmerOrOwnerPlayerOrPlayerItself())
+            if (pTarget && pTarget->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED))
                 return false;
             break;
         case SPELL_AURA_PERIODIC_DAMAGE:

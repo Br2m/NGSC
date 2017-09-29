@@ -90,7 +90,7 @@ bool LoginQueryHolder::Initialize()
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADACTIONS,         "SELECT button,action,type FROM character_action WHERE guid = '%u' ORDER BY button", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADSOCIALLIST,      "SELECT friend,flags FROM character_social WHERE guid = '%u' LIMIT 255", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADHOMEBIND,        "SELECT map,zone,position_x,position_y,position_z FROM character_homebind WHERE guid = '%u'", m_guid.GetCounter());
-    res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADSPELLCOOLDOWNS,  "SELECT spell,item,time FROM character_spell_cooldown WHERE guid = '%u'", m_guid.GetCounter());
+    res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADSPELLCOOLDOWNS,  "SELECT SpellId, SpellExpireTime, Category, CategoryExpireTime, ItemId FROM character_spell_cooldown WHERE LowGuid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADGUILD,           "SELECT guildid,rank FROM guild_member WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADBGDATA,          "SELECT instance_id, team, join_x, join_y, join_z, join_o, join_map FROM character_battleground_data WHERE guid = '%u'", m_guid.GetCounter());
     res &= SetPQuery(PLAYER_LOGIN_QUERY_LOADSKILLS,          "SELECT skill, value, max FROM character_skills WHERE guid = '%u'", m_guid.GetCounter());
@@ -160,7 +160,7 @@ void WorldSession::HandleCharEnum(QueryResult* result)
         do
         {
             uint32 guidlow = (*result)[0].GetUInt32();
-            //DETAIL_LOG("Build enum data for char guid %u from account %u.", guidlow, GetAccountId());
+            DETAIL_LOG("Build enum data for char guid %u from account %u.", guidlow, GetAccountId());
             if (Player::BuildEnumData(result, data))
                 ++num;
         }
@@ -448,7 +448,7 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recv_data)
 
     m_playerLoading = true;
 
-	//DEBUG_LOG("WORLD: Received opcode Player Logon Message");
+    DEBUG_LOG("WORLD: Received opcode Player Logon Message");
 
     LoginQueryHolder* holder = new LoginQueryHolder(GetAccountId(), playerGuid);
     if (!holder->Initialize())
@@ -540,7 +540,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
             ++linecount;
         }
 
-		//DEBUG_LOG("WORLD: Sent motd (SMSG_MOTD)");
+        DEBUG_LOG("WORLD: Sent motd (SMSG_MOTD)");
     }
 
     // QueryResult *result = CharacterDatabase.PQuery("SELECT guildid,rank FROM guild_member WHERE guid = '%u'",pCurrChar->GetGUIDLow());
@@ -569,7 +569,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
             data << uint8(1);
             data << guild->GetMOTD();
             SendPacket(data);
-			//DEBUG_LOG("WORLD: Sent guild-motd (SMSG_GUILD_EVENT)");
+            DEBUG_LOG("WORLD: Sent guild-motd (SMSG_GUILD_EVENT)");
 
             guild->BroadcastEvent(GE_SIGNED_ON, pCurrChar->GetObjectGuid(), pCurrChar->GetName());
         }
@@ -617,7 +617,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     sObjectAccessor.AddObject(pCurrChar);
-    // //DEBUG_LOG("Player %s added to Map.",pCurrChar->GetName());
+    // DEBUG_LOG("Player %s added to Map.",pCurrChar->GetName());
     pCurrChar->GetSocial()->SendFriendList();
     pCurrChar->GetSocial()->SendIgnoreList();
 
@@ -662,10 +662,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     // Set FFA PvP for non GM in non-rest mode
     if (sWorld.IsFFAPvPRealm() && !pCurrChar->isGameMaster() && !pCurrChar->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING))
-        pCurrChar->SetFFAPvP(true);
+        pCurrChar->SetPvPFreeForAll(true);
 
     if (pCurrChar->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP))
-        pCurrChar->SetContestedPvP();
+        pCurrChar->UpdatePvPContested(true);
 
     // Apply at_login requests
     if (pCurrChar->HasAtLoginFlag(AT_LOGIN_RESET_SPELLS))
@@ -721,7 +721,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
 void WorldSession::HandleSetFactionAtWarOpcode(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: Received opcode CMSG_SET_FACTION_ATWAR");
+    DEBUG_LOG("WORLD: Received opcode CMSG_SET_FACTION_ATWAR");
 
     uint32 repListID;
     uint8  flag;
@@ -734,7 +734,7 @@ void WorldSession::HandleSetFactionAtWarOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleMeetingStoneInfoOpcode(WorldPacket& /*recv_data*/)
 {
-    //DEBUG_LOG("WORLD: Received CMSG_MEETING_STONE_INFO");
+    DEBUG_LOG("WORLD: Received CMSG_MEETING_STONE_INFO");
 
     WorldPacket data(SMSG_MEETINGSTONE_SETQUEUE, 5);
     data << uint32(0) << uint8(6);
@@ -758,7 +758,7 @@ void WorldSession::HandleTutorialFlagOpcode(WorldPacket& recv_data)
     tutflag |= (1 << rInt);
     SetTutorialInt(wInt, tutflag);
 
-    // //DEBUG_LOG("Received Tutorial Flag Set {%u}.", iFlag);
+    // DEBUG_LOG("Received Tutorial Flag Set {%u}.", iFlag);
 }
 
 void WorldSession::HandleTutorialClearOpcode(WorldPacket& /*recv_data*/)
@@ -775,7 +775,7 @@ void WorldSession::HandleTutorialResetOpcode(WorldPacket& /*recv_data*/)
 
 void WorldSession::HandleSetWatchedFactionOpcode(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: Received opcode CMSG_SET_WATCHED_FACTION");
+    DEBUG_LOG("WORLD: Received opcode CMSG_SET_WATCHED_FACTION");
     int32 repId;
     recv_data >> repId;
     GetPlayer()->SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, repId);
@@ -783,7 +783,7 @@ void WorldSession::HandleSetWatchedFactionOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleSetFactionInactiveOpcode(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: Received opcode CMSG_SET_FACTION_INACTIVE");
+    DEBUG_LOG("WORLD: Received opcode CMSG_SET_FACTION_INACTIVE");
     uint32 replistid;
     uint8 inactive;
     recv_data >> replistid >> inactive;
@@ -793,13 +793,13 @@ void WorldSession::HandleSetFactionInactiveOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleShowingHelmOpcode(WorldPacket& /*recv_data*/)
 {
-    //DEBUG_LOG("CMSG_SHOWING_HELM for %s", _player->GetName());
+    DEBUG_LOG("CMSG_SHOWING_HELM for %s", _player->GetName());
     _player->ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_HELM);
 }
 
 void WorldSession::HandleShowingCloakOpcode(WorldPacket& /*recv_data*/)
 {
-    //DEBUG_LOG("CMSG_SHOWING_CLOAK for %s", _player->GetName());
+    DEBUG_LOG("CMSG_SHOWING_CLOAK for %s", _player->GetName());
     _player->ToggleFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_CLOAK);
 }
 

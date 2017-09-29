@@ -216,7 +216,7 @@ DungeonPersistentState::DungeonPersistentState(uint16 MapId, uint32 InstanceId, 
 
 DungeonPersistentState::~DungeonPersistentState()
 {
-    //DEBUG_LOG("Unloading DungeonPersistantState of map %u instance %u", GetMapId(), GetInstanceId());
+    DEBUG_LOG("Unloading DungeonPersistantState of map %u instance %u", GetMapId(), GetInstanceId());
     UnbindThisState();
 }
 
@@ -306,10 +306,10 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
 
             CharacterDatabase.PExecute("UPDATE instance SET encountersMask = '%u' WHERE id = '%u'", m_completedEncountersMask, GetInstanceId());
 
-            //DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
+            DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
             if (/*uint32 dungeonId =*/ iter->second->lastEncounterDungeon)
             {
-                //DEBUG_LOG("DungeonPersistentState:: Dungeon %s (Instance-Id %u) completed last encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
+                DEBUG_LOG("DungeonPersistentState:: Dungeon %s (Instance-Id %u) completed last encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
                 // Place LFG reward here
             }
             return;
@@ -633,19 +633,19 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
         if (!resetTime)
         {
             // initialize reset time
-            // for normal instances if no creatures are killed the instance will reset in two hours
+            // for normal instances if no creatures are killed the instance will reset in 30 minutes
             if (mapEntry->map_type == MAP_RAID)
                 resetTime = m_Scheduler.GetResetTimeFor(mapEntry->MapID);
             else
             {
-                resetTime = time(nullptr) + 2 * HOUR;
+                resetTime = time(nullptr) + NORMAL_INSTANCE_RESET_TIME;
                 // normally this will be removed soon after in DungeonMap::Add, prevent error
                 m_Scheduler.ScheduleReset(true, resetTime, DungeonResetEvent(RESET_EVENT_NORMAL_DUNGEON, mapEntry->MapID, instanceId));
             }
         }
     }
 
-    //DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = '" UI64FMTD "', canRset = %u", mapEntry->MapID, instanceId, uint64(resetTime), canReset ? 1 : 0);
+    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = '" UI64FMTD "', canRset = %u", mapEntry->MapID, instanceId, uint64(resetTime), canReset ? 1 : 0);
 
     MapPersistentState* state;
     if (mapEntry->IsDungeon())
@@ -852,7 +852,7 @@ void MapPersistentStateManager::_ResetSave(PersistentStateMap& holder, Persisten
 
 void MapPersistentStateManager::_ResetInstance(uint32 mapid, uint32 instanceId)
 {
-    //DEBUG_LOG("MapPersistentStateManager::_ResetInstance %u, %u", mapid, instanceId);
+    DEBUG_LOG("MapPersistentStateManager::_ResetInstance %u, %u", mapid, instanceId);
 
     PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.find(instanceId);
     if (itr != m_instanceSaveByInstanceId.end())

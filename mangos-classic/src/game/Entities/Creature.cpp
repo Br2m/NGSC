@@ -143,9 +143,6 @@ Creature::Creature(CreatureSubtype subtype) : Unit(),
     for (int i = 0; i < CREATURE_MAX_SPELLS; ++i)
         m_spells[i] = 0;
 
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
-
     SetWalk(true, true);
 }
 
@@ -196,7 +193,7 @@ void Creature::RemoveCorpse(bool inPlace)
     if ((getDeathState() != CORPSE && !m_isDeadByDefault) || (getDeathState() != ALIVE && m_isDeadByDefault))
         return;
 
-	////DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Removing corpse of %s ", GetGuidStr().c_str());
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Removing corpse of %s ", GetGuidStr().c_str());
 
     m_corpseDecayTimer = 0;
     SetDeathState(DEAD);
@@ -501,7 +498,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         {
             if (m_respawnTime <= time(nullptr) && (!m_isSpawningLinked || GetMap()->GetCreatureLinkingHolder()->CanSpawn(this)))
             {
-				////DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
+                DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
                 m_respawnTime = 0;
                 m_aggroDelay = sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY);
                 delete loot;
@@ -590,21 +587,6 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         default:
             break;
     }
-
-	if (GetEntry() == 16697)
-	{
-		float x, y, z;
-		GetPosition(x, y, z);
-		if (z < 241.2)
-		{
-			DEBUG_LOG("z void = %f", z);
-		}
-
-	}
-
-
-	//Position const* position = movementInfo.GetPos();
-	//float z_diff = m_lastFallZ - position->z;
 }
 
 void Creature::RegenerateAll(uint32 update_diff)
@@ -645,7 +627,7 @@ void Creature::RegeneratePower()
     {
         case POWER_MANA:
             // Combat and any controlled creature
-            if (isInCombat() || GetCharmerOrOwnerGuid())
+            if (isInCombat() || GetMasterGuid())
             {
                 if (!IsUnderLastManaUseEffect())
                 {
@@ -703,7 +685,7 @@ void Creature::RegenerateHealth()
     uint32 addvalue;
 
     // Not only pet, but any controlled creature
-    if (GetCharmerOrOwnerGuid())
+    if (GetMasterGuid())
     {
         float HealthIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_HEALTH);
         float Spirit = GetStat(STAT_SPIRIT);
@@ -753,7 +735,7 @@ bool Creature::AIM_Initialize()
     // make sure nothing can change the AI during AI update
     if (m_AI_locked)
     {
-        //DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "AIM_Initialize: failed to init, locked.");
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "AIM_Initialize: failed to init, locked.");
         return false;
     }*/
 
@@ -787,23 +769,31 @@ bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo cons
     if (InstanceData* iData = GetMap()->GetInstanceData())
         iData->OnCreatureCreate(this);
 
-    switch (GetCreatureInfo()->Rank)
+    if (sObjectMgr.IsEncounter(GetEntry(), GetMapId()))
     {
-        case CREATURE_ELITE_RARE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE);
-            break;
-        case CREATURE_ELITE_ELITE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE);
-            break;
-        case CREATURE_ELITE_RAREELITE:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE);
-            break;
-        case CREATURE_ELITE_WORLDBOSS:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS);
-            break;
-        default:
-            m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL);
-            break;
+        // encounter boss forced decay timer to 1h
+        m_corpseDelay = 3600;                               // TODO: maybe add that to config file
+    }
+    else
+    {
+        switch (GetCreatureInfo()->Rank)
+        {
+            case CREATURE_ELITE_RARE:
+                m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RARE);
+                break;
+            case CREATURE_ELITE_ELITE:
+                m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_ELITE);
+                break;
+            case CREATURE_ELITE_RAREELITE:
+                m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_RAREELITE);
+                break;
+            case CREATURE_ELITE_WORLDBOSS:
+                m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_WORLDBOSS);
+                break;
+            default:
+                m_corpseDelay = sWorld.getConfig(CONFIG_UINT32_CORPSE_DECAY_NORMAL);
+                break;
+        }
     }
 
     // Add to CreatureLinkingHolder if needed
@@ -960,6 +950,12 @@ void Creature::PrepareBodyLootState()
 
     if (killer)
         loot = new Loot(killer, this, LOOT_CORPSE);
+
+    if (m_lootStatus == CREATURE_LOOT_STATUS_LOOTED && !HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
+    {
+        // there is no loot so we can degrade corpse decay timer
+        ReduceCorpseDecayTimer();
+    }
 }
 
 /**
@@ -1029,7 +1025,7 @@ void Creature::SetLootRecipient(Unit* unit)
         return;
     }
 
-    Player* player = unit->GetCharmerOrOwnerPlayerOrPlayerItself();
+    Player* player = unit->GetBeneficiaryPlayer();
     if (!player)                                            // normal creature, no player involved
         return;
 
@@ -1497,7 +1493,7 @@ void Creature::DeleteFromDB()
     CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow());
     if (!data)
     {
-		//DEBUG_LOG("Trying to delete not saved creature!");
+        DEBUG_LOG("Trying to delete not saved creature!");
         return;
     }
 
@@ -1811,7 +1807,7 @@ void Creature::SendAIReaction(AiReaction reactionType)
 
     ((WorldObject*)this)->SendMessageToSet(data, true);
 
-	////DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "WORLD: Sent SMSG_AI_REACTION, type %u.", reactionType);
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "WORLD: Sent SMSG_AI_REACTION, type %u.", reactionType);
 }
 
 void Creature::CallAssistance()
@@ -1849,7 +1845,7 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
     if (GetCreatureInfo()->ExtraFlags & CREATURE_EXTRA_FLAG_NO_AGGRO)
         return false;
 
-    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_PASSIVE))
+    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_NPC))
         return false;
 
     // skip fighting creature
@@ -1857,7 +1853,7 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
         return false;
 
     // only free creature
-    if (GetCharmerOrOwnerGuid())
+    if (GetMasterGuid())
         return false;
 
     // only from same creature faction
@@ -2223,46 +2219,6 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
     return nullptr;
 }
 
-void Creature::_AddCreatureSpellCooldown(uint32 spell_id, time_t end_time)
-{
-    m_CreatureSpellCooldowns[spell_id] = end_time;
-}
-
-void Creature::_AddCreatureCategoryCooldown(uint32 category, time_t apply_time)
-{
-    m_CreatureCategoryCooldowns[category] = apply_time;
-}
-
-void Creature::AddCreatureSpellCooldown(uint32 spellid)
-{
-    SpellEntry const* spellInfo = sSpellTemplate.LookupEntry<SpellEntry>(spellid);
-    if (!spellInfo)
-        return;
-
-    uint32 cooldown = GetSpellRecoveryTime(spellInfo);
-    if (cooldown)
-        _AddCreatureSpellCooldown(spellid, time(nullptr) + cooldown / IN_MILLISECONDS);
-
-    if (spellInfo->Category)
-        _AddCreatureCategoryCooldown(spellInfo->Category, time(nullptr));
-}
-
-bool Creature::HasCategoryCooldown(uint32 spell_id) const
-{
-    SpellEntry const* spellInfo = sSpellTemplate.LookupEntry<SpellEntry>(spell_id);
-    if (!spellInfo)
-        return false;
-
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
-    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(nullptr));
-}
-
-bool Creature::HasSpellCooldown(uint32 spell_id) const
-{
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(nullptr)) || HasCategoryCooldown(spell_id);
-}
-
 bool Creature::IsInEvadeMode() const
 {
     return !i_motionMaster.empty() && i_motionMaster.GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE;
@@ -2454,10 +2410,10 @@ void Creature::SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags)
 
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE)
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK)
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE)
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_IMMUNE_TO_PLAYER)
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PLAYER);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_IMMUNE_TO_NPC)
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED)
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE)
@@ -2477,13 +2433,13 @@ void Creature::ClearTemporaryFaction()
 
     ForceHealthAndPowerUpdate();                            // update health and power for client needed to hide enemy real value
 
-    // Reset UNIT_FLAG_NON_ATTACKABLE, UNIT_FLAG_OOC_NOT_ATTACKABLE, UNIT_FLAG_PASSIVE, UNIT_FLAG_PACIFIED or UNIT_FLAG_NOT_SELECTABLE flags
+    // Reset UNIT_FLAG_NON_ATTACKABLE, UNIT_FLAG_IMMUNE_TO_PLAYER, UNIT_FLAG_IMMUNE_TO_NPC, UNIT_FLAG_PACIFIED or UNIT_FLAG_NOT_SELECTABLE flags
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NON_ATTACKABLE)
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK && GetCreatureInfo()->UnitFlags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !isInCombat())
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
-    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PASSIVE)
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_IMMUNE_TO_PLAYER && GetCreatureInfo()->UnitFlags & UNIT_FLAG_IMMUNE_TO_PLAYER)
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PLAYER);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_IMMUNE_TO_NPC && GetCreatureInfo()->UnitFlags & UNIT_FLAG_IMMUNE_TO_NPC)
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PACIFIED && GetCreatureInfo()->UnitFlags & UNIT_FLAG_PACIFIED)
         SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
     if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NOT_SELECTABLE && GetCreatureInfo()->UnitFlags & UNIT_FLAG_NOT_SELECTABLE)
@@ -2562,7 +2518,7 @@ struct SpawnCreatureInMapsWorker
         if (map->IsLoaded(i_data->posX, i_data->posY))
         {
             Creature* pCreature = new Creature;
-            // //DEBUG_LOG("Spawning creature %u",*itr);
+            // DEBUG_LOG("Spawning creature %u",*itr);
             if (!pCreature->LoadFromDB(i_guid, map))
             {
                 delete pCreature;
@@ -2729,6 +2685,33 @@ bool Creature::CanCrit(const SpellEntry *entry, SpellSchoolMask schoolMask, Weap
     return Unit::CanCrit(entry, schoolMask, attType);
 }
 
+void Creature::InspectingLoot()
+{
+    // until multiple corpse for creature is not supported
+    // this will not have effect after re spawn delay (corpse will be removed anyway)
+
+    // check if player have enough time to inspect loot
+    if (m_corpseDecayTimer < MINIMUM_LOOTING_TIME)
+        m_corpseDecayTimer = MINIMUM_LOOTING_TIME;
+}
+
+// reduce decay timer for corpse if need (for a corpse without loot)
+void Creature::ReduceCorpseDecayTimer()
+{
+    if (!IsInWorld())
+        return;
+
+    bool isDungeonEncounter = false;
+    if (GetMap()->IsDungeon())
+    {
+        if (sObjectMgr.IsEncounter(GetEntry(), GetMapId()))
+            isDungeonEncounter = true;
+    }
+
+    if (!isDungeonEncounter)
+        m_corpseDecayTimer = 2 * MINUTE * IN_MILLISECONDS;  // 2 minutes for a creature
+}
+
 // Set loot status. Also handle remove corpse timer
 void Creature::SetLootStatus(CreatureLootStatus status)
 {
@@ -2743,24 +2726,8 @@ void Creature::SetLootStatus(CreatureLootStatus status)
                 SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
             else
             {
-                uint32 corpseLootedDelay;
-                if (sWorld.getConfig(CONFIG_FLOAT_RATE_CORPSE_DECAY_LOOTED) > 0.0f)
-                    corpseLootedDelay = (uint32)((m_corpseDelay * IN_MILLISECONDS) * sWorld.getConfig(CONFIG_FLOAT_RATE_CORPSE_DECAY_LOOTED));
-                else
-                    corpseLootedDelay = (m_respawnDelay * IN_MILLISECONDS) / 3;
-
-                // if m_respawnDelay is larger than default corpse delay always use corpseLootedDelay
-                if (m_respawnDelay > m_corpseDelay)
-                {
-                    m_corpseDecayTimer = corpseLootedDelay;
-                }
-                else
-                {
-                    // if m_respawnDelay is relatively short and corpseDecayTimer is larger than corpseLootedDelay
-                    if (m_corpseDecayTimer > corpseLootedDelay)
-                        m_corpseDecayTimer = corpseLootedDelay;
-                }
-
+                // there is no loot so we can degrade corpse decay
+                ReduceCorpseDecayTimer();
                 RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
             }
             break;

@@ -44,7 +44,7 @@ void AddItemsSetItem(Player* player, Item* item)
     ItemSetEffect* eff = nullptr;
 
     for (size_t x = 0; x < player->ItemSetEff.size(); ++x)
-    { // Récupère l'ItemSetEff de l'item
+    {
         if (player->ItemSetEff[x] && player->ItemSetEff[x]->setid == setid)
         {
             eff = player->ItemSetEff[x];
@@ -53,7 +53,7 @@ void AddItemsSetItem(Player* player, Item* item)
     }
 
     if (!eff)
-    { // Si c'est le premier item équipé du set
+    {
         eff = new ItemSetEffect;
         memset(eff, 0, sizeof(ItemSetEffect));
         eff->setid = setid;
@@ -75,7 +75,7 @@ void AddItemsSetItem(Player* player, Item* item)
     {
         if (!set->spells[x])
             continue;
-        // not enough for spell
+        // not enough for  spell
         if (set->items_to_triggerspell[x] > eff->item_count)
             continue;
 
@@ -100,7 +100,7 @@ void AddItemsSetItem(Player* player, Item* item)
                 }
 
                 // spell casted only if fit form requirement, in other case will casted at form change
-				player->ApplyEquipSpell(spellInfo, nullptr, true);
+                player->ApplyEquipSpell(spellInfo, nullptr, true);
                 eff->spells[y] = spellInfo;
                 break;
             }
@@ -273,7 +273,7 @@ void Item::UpdateDuration(Player* owner, uint32 diff)
     if (!GetUInt32Value(ITEM_FIELD_DURATION))
         return;
 
-    // //DEBUG_LOG("Item::UpdateDuration Item (Entry: %u Duration %u Diff %u)", GetEntry(), GetUInt32Value(ITEM_FIELD_DURATION), diff);
+    // DEBUG_LOG("Item::UpdateDuration Item (Entry: %u Duration %u Diff %u)", GetEntry(), GetUInt32Value(ITEM_FIELD_DURATION), diff);
 
     if (GetUInt32Value(ITEM_FIELD_DURATION) <= diff)
     {

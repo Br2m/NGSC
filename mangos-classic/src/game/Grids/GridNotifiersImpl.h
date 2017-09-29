@@ -26,6 +26,7 @@
 #include "Spells/SpellAuras.h"
 #include "Server/DBCEnums.h"
 #include "Server/SQLStorages.h"
+#include "Spells/SpellMgr.h"
 
 #include <memory>
 
@@ -126,7 +127,7 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
         return;
 
     // Check targets for not_selectable unit flag and remove
-    if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_OOC_NOT_ATTACKABLE))
+    if (target->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PLAYER))
         return;
 
     // Evade target
@@ -159,6 +160,34 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
     if (target->IsImmuneToSpell(spellInfo, false) || target->IsImmuneToSpellEffect(spellInfo, eff_index, false))
         return;
 
+    SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(spellInfo->Id);
+    if (bounds.first != bounds.second)
+    {
+        bool found = false;
+        for (SQLMultiStorage::SQLMultiSIterator<SpellTargetEntry> i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
+        {
+            if (i_spellST->CanNotHitWithSpellEffect(eff_index))
+                continue;
+
+            // only creature entries supported for this target type
+            if (i_spellST->type == SPELL_TARGET_TYPE_GAMEOBJECT)
+                continue;
+
+            if (target->GetEntry() == i_spellST->targetEntry)
+            {
+                if (i_spellST->type == SPELL_TARGET_TYPE_DEAD && ((Creature*)target)->IsCorpse())
+                    found = true;
+                else if (i_spellST->type == SPELL_TARGET_TYPE_CREATURE && target->isAlive())
+                    found = true;
+
+                break;
+            }
+        }
+
+        if (!found)
+            return;
+    }
+
     // Apply PersistentAreaAura on target
     // in case 2 dynobject overlap areas for same spell, same holder is selected, so dynobjects share holder
     SpellAuraHolder* holder = target->GetSpellAuraHolder(spellInfo->Id, i_dynobject.GetCasterGuid());
@@ -170,9 +199,7 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
             PersistentAreaAura* Aur = new PersistentAreaAura(spellInfo, eff_index, nullptr, holder, target, i_dynobject.GetCaster());
             holder->AddAura(Aur, eff_index);
             target->AddAuraToModList(Aur);
-            holder->SetInUse(true);
             Aur->ApplyModifier(true, true);
-            holder->SetInUse(false);
         }
         else if (holder->GetAuraDuration() >= 0 && uint32(holder->GetAuraDuration()) < i_dynobject.GetDuration())
         {

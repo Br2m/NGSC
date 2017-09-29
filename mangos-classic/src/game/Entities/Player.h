@@ -66,6 +66,9 @@ typedef std::deque<Mail*> PlayerMails;
 #define PLAYER_MAX_SKILLS           127
 #define PLAYER_EXPLORED_ZONES_SIZE  64
 
+// TODO: Maybe this can be implemented in configuration file.
+#define PLAYER_NEW_INSTANCE_LIMIT_PER_HOUR 5
+
 // Note: SPELLMOD_* values is aura types in fact
 enum SpellModType
 {
@@ -273,10 +276,14 @@ struct PlayerInfo
 
 struct PvPInfo
 {
-    PvPInfo() : inHostileArea(false), endTimer(0) {}
+    PvPInfo() : inPvPCombat(false), inPvPEnforcedArea(false), inPvPCapturePoint(false), isPvPFlagCarrier(false), timerPvPRemaining(0), timerPvPContestedRemaining(0) {}
 
-    bool inHostileArea;
-    time_t endTimer;
+    bool inPvPCombat;
+    bool inPvPEnforcedArea;
+    bool inPvPCapturePoint;
+    bool isPvPFlagCarrier;
+    uint32 timerPvPRemaining;
+    uint32 timerPvPContestedRemaining;
 };
 
 struct DuelInfo
@@ -384,7 +391,7 @@ enum PlayerFlags
     PLAYER_FLAGS_UNK7                   = 0x00000040,       // admin?
     PLAYER_FLAGS_FFA_PVP                = 0x00000080,
     PLAYER_FLAGS_CONTESTED_PVP          = 0x00000100,       // Player has been involved in a PvP combat and will be attacked by contested guards
-    PLAYER_FLAGS_IN_PVP                 = 0x00000200,
+    PLAYER_FLAGS_PVP_DESIRED            = 0x00000200,       // Stores player's permanent PvP flag preference
     PLAYER_FLAGS_HIDE_HELM              = 0x00000400,
     PLAYER_FLAGS_HIDE_CLOAK             = 0x00000800,
     PLAYER_FLAGS_PARTIAL_PLAY_TIME      = 0x00001000,       // played long time
@@ -740,19 +747,26 @@ class PlayerTaxi
         void ClearTaxiDestinations() { m_TaxiDestinations.clear(); }
         void AddTaxiDestination(uint32 dest) { m_TaxiDestinations.push_back(dest); }
         uint32 GetTaxiSource() const { return m_TaxiDestinations.empty() ? 0 : m_TaxiDestinations.front(); }
-        uint32 GetTaxiDestination() const { return m_TaxiDestinations.size() < 2 ? 0 : m_TaxiDestinations[1]; }
+        uint32 GetNextTaxiDestination() const { return m_TaxiDestinations.size() < 2 ? 0 : m_TaxiDestinations[1]; }
+        uint32 GetFinalTaxiDestination() const { return m_TaxiDestinations.empty() ? 0 : m_TaxiDestinations.back(); }
         uint32 GetCurrentTaxiPath() const;
         uint32 NextTaxiDestination()
         {
             m_TaxiDestinations.pop_front();
-            return GetTaxiDestination();
+            return GetNextTaxiDestination();
         }
         bool empty() const { return m_TaxiDestinations.empty(); }
 
         friend std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
+
+        std::deque<uint32> const& GetPath() const { return m_TaxiDestinations; }
+
+        uint32 GetLastNode() { return m_lastNode; }
+        void SetLastNode(uint32 lastNode) { m_lastNode = lastNode; }
     private:
         TaxiMask m_taximask;
         std::deque<uint32> m_TaxiDestinations;
+        uint32 m_lastNode;
 };
 
 std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
@@ -1333,6 +1347,8 @@ class Player : public Unit
         void ClearComboPoints();
         void SetComboPoints();
 
+        bool AttackStop(bool targetSwitch = false, bool includingCast = false, bool includingCombo = false) override;
+
         void SendMailResult(uint32 mailId, MailResponseType mailAction, MailResponseResult mailError, uint32 equipError = 0, uint32 item_guid = 0, uint32 item_count = 0) const;
         void SendNewMail() const;
         void UpdateNextMailTimeAndUnreads();
@@ -1417,41 +1433,12 @@ class Player : public Unit
         PlayerSpellMap const& GetSpellMap() const { return m_spells; }
         PlayerSpellMap&       GetSpellMap()       { return m_spells; }
 
-        SpellCooldowns const& GetSpellCooldownMap() const { return m_spellCooldowns; }
-
         void AddSpellMod(SpellModifier* mod, bool apply);
         bool IsAffectedBySpellmod(SpellEntry const* spellInfo, SpellModifier* mod, Spell const* spell = nullptr);
         template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell const* spell = nullptr);
         SpellModifier* GetSpellMod(SpellModOp op, uint32 spellId) const;
         void RemoveSpellMods(Spell const* spell);
         void ResetSpellModsDueToCanceledSpell(Spell const* spell);
-
-        static uint32 const infinityCooldownDelay = MONTH;  // used for set "infinity cooldowns" for spells and check
-        static uint32 const infinityCooldownDelayCheck = MONTH / 2;
-        bool HasSpellCooldown(uint32 spell_id) const
-        {
-            SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
-            return itr != m_spellCooldowns.end() && itr->second.end > time(nullptr);
-        }
-        time_t GetSpellCooldownDelay(uint32 spell_id) const
-        {
-            SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
-            time_t t = time(nullptr);
-            return itr != m_spellCooldowns.end() && itr->second.end > t ? itr->second.end - t : 0;
-        }
-        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, Spell* spell = nullptr, bool infinityCooldown = false);
-        void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time);
-        void SendCooldownEvent(SpellEntry const* spellInfo, uint32 itemId = 0, Spell* spell = nullptr);
-        void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
-        void RemoveSpellCooldown(uint32 spell_id, bool update = false);
-        void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
-        void SendClearCooldown(uint32 spell_id, Unit* target) const;
-
-        GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
-
-        void RemoveAllSpellCooldown();
-        void _LoadSpellCooldowns(QueryResult* result);
-        void _SaveSpellCooldowns();
 
         void setResurrectRequestData(ObjectGuid guid, uint32 mapId, float X, float Y, float Z, uint32 health, uint32 mana)
         {
@@ -1477,9 +1464,8 @@ class Player : public Unit
         void SendInitialActionButtons() const;
 
         PvPInfo pvpInfo;
-        void UpdatePvP(bool state, bool ovrride = false);
-        bool IsFFAPvP() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_FFA_PVP); }
-        void SetFFAPvP(bool state);
+        void UpdatePvP(bool state, bool overriding = false);
+        void UpdatePvPContested(bool state, bool overriding = false);
 
         void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
@@ -1488,15 +1474,8 @@ class Player : public Unit
         void UpdateZoneDependentAuras();
         void UpdateAreaDependentAuras();                    // subzones
 
-        void UpdatePvPFlag(time_t currTime);
-        void UpdateContestedPvP(uint32 currTime);
-        void SetContestedPvPTimer(uint32 newTime) {m_contestedPvPTimer = newTime;}
-        void ResetContestedPvP()
-        {
-            clearUnitState(UNIT_STAT_ATTACK_PLAYER);
-            RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_CONTESTED_PVP);
-            m_contestedPvPTimer = 0;
-        }
+        void UpdatePvPFlagTimer(uint32 diff);
+        void UpdatePvPContestedFlagTimer(uint32 diff);
 
         /** todo: -maybe move UpdateDuelFlag+DuelComplete to independent DuelHandler.. **/
         DuelInfo* duel;
@@ -1523,6 +1502,10 @@ class Player : public Unit
         static uint32 GetRankFromDB(ObjectGuid guid);
         int GetGuildIdInvited() { return m_GuildIdInvited; }
         static void RemovePetitionsAndSigns(ObjectGuid guid);
+
+        bool CanEnterNewInstance(uint32 instanceId);
+        void AddNewInstanceId(uint32 instanceId);
+        void UpdateNewInstanceIdTimers(TimePoint const& now);
 
         bool UpdateSkill(uint32 skill_id, uint32 step);
         bool UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step);
@@ -1789,8 +1772,6 @@ class Player : public Unit
         void SendInitWorldStates(uint32 zone) const;
         void SendUpdateWorldState(uint32 Field, uint32 Value) const;
         void SendDirectMessage(WorldPacket const& data) const;
-
-        void SendAuraDurationsForTarget(Unit* target);
 
         PlayerMenu* PlayerTalkClass;
         std::vector<ItemSetEffect*> ItemSetEff;
@@ -2094,10 +2075,36 @@ class Player : public Unit
         bool IsInDuel() const { return duel && duel->startTime != 0; }
 #endif
 
+        // cooldown system
+        virtual void AddGCD(SpellEntry const& spellEntry, uint32 forcedDuration = 0, bool updateClient = 0) override;
+        virtual void AddCooldown(SpellEntry const& spellEntry, ItemPrototype const* itemProto = nullptr, bool permanent = false, uint32 forcedDuration = 0) override;
+        virtual void RemoveSpellCooldown(SpellEntry const& spellEntry, bool updateClient = true) override;
+        virtual void RemoveSpellCategoryCooldown(uint32 category, bool updateClient = true) override;
+        virtual void RemoveAllCooldowns(bool sendOnly = false);
+        virtual void LockOutSpells(SpellSchoolMask schoolMask, uint32 duration) override;
+        void RemoveSpellLockout(SpellSchoolMask spellSchoolMask, std::set<uint32>* spellAlreadySent = nullptr);
+        void SendClearCooldown(uint32 spell_id, Unit* target) const;
+        void _LoadSpellCooldowns(QueryResult* result);
+        void _SaveSpellCooldowns();
+
+        template <typename F>
+        void RemoveSomeCooldown(F check)
+        {
+            auto spellCDItr = m_cooldownMap.begin();
+            while (spellCDItr != m_cooldownMap.end())
+            {
+                SpellEntry const* entry = sSpellTemplate.LookupEntry<SpellEntry>(spellCDItr->first);
+                if (entry && check(*entry))
+                {
+                    SendClearCooldown(spellCDItr->first, this);
+                    spellCDItr = m_cooldownMap.erase(spellCDItr);
+                }
+                else
+                    ++spellCDItr;
+            }
+        }
+
     protected:
-
-        uint32 m_contestedPvPTimer;
-
         /*********************************************************/
         /***               BATTLEGROUND SYSTEM                 ***/
         /*********************************************************/
@@ -2144,6 +2151,8 @@ class Player : public Unit
         bool _LoadHomeBind(QueryResult* result);
         void _LoadBGData(QueryResult* result);
         void _LoadIntoDataField(const char* data, uint32 startOffset, uint32 count);
+        void _LoadCreatedInstanceTimers();
+        void _SaveNewInstanceIdTimer();
 
         /*********************************************************/
         /***                   SAVE SYSTEM                     ***/
@@ -2213,9 +2222,6 @@ class Player : public Unit
 
         PlayerMails m_mail;
         PlayerSpellMap m_spells;
-        SpellCooldowns m_spellCooldowns;
-
-        GlobalCooldownMgr m_GlobalCooldownMgr;
 
         ActionButtonList m_actionButtons;
 
@@ -2370,6 +2376,9 @@ class Player : public Unit
         ReputationMgr  m_reputationMgr;
 
         int32 m_cannotBeDetectedTimer;
+
+        std::unordered_map<uint32, TimePoint> m_enteredInstances;
+        uint32 m_createdInstanceClearTimer;
 };
 
 void AddItemsSetItem(Player* player, Item* item);

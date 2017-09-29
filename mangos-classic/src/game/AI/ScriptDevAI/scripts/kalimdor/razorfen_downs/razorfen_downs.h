@@ -7,17 +7,15 @@
 
 enum
 {
-    MAX_ENCOUNTER               = 2,
+    MAX_ENCOUNTER               = 1,
     MAX_WAVES                   = 3,
     MAX_COUNT_POS               = 2,
 
     TYPE_TUTEN_KASH             = 0,
-	TYPE_PLAGUEMAW_THE_ROTTING  = 1,
 
     NPC_TOMB_FIEND              = 7349,
     NPC_TOMB_REAVER             = 7351,
     NPC_TUTEN_KASH              = 7355,
-	NPC_PLAGUEMAW_THE_ROTTING   = 7356, // Correctif
 
     GO_GONG                     = 148917,
 };
@@ -64,7 +62,7 @@ class instance_razorfen_downs : public ScriptedInstance
         const char* Save() const override { return m_strInstData.c_str(); }
         void Load(const char* chrIn) override;
 
-        void DoSpawnWaveIfCan(GameObject* pGo, Unit* pSource);
+        void DoSpawnWaveIfCan(GameObject* pGo);
 
     protected:
         uint32 m_auiEncounter[MAX_ENCOUNTER];

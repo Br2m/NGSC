@@ -376,7 +376,7 @@ void WorldSession::HandleMinimapPingOpcode(WorldPacket& recv_data)
     if (!GetPlayer()->GetGroup())
         return;
 
-    // //DEBUG_LOG("Received opcode MSG_MINIMAP_PING X: %f, Y: %f", x, y);
+    // DEBUG_LOG("Received opcode MSG_MINIMAP_PING X: %f, Y: %f", x, y);
 
     /** error handling **/
     /********************/
@@ -403,7 +403,7 @@ void WorldSession::HandleRandomRollOpcode(WorldPacket& recv_data)
     // everything is fine, do it
     roll = urand(minimum, maximum);
 
-    // //DEBUG_LOG("ROLL: MIN: %u, MAX: %u, ROLL: %u", minimum, maximum, roll);
+    // DEBUG_LOG("ROLL: MIN: %u, MAX: %u, ROLL: %u", minimum, maximum, roll);
 
     WorldPacket data(MSG_RANDOM_ROLL, 4 + 4 + 4 + 8);
     data << uint32(minimum);
@@ -526,7 +526,7 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recv_data)
     recv_data >> flag1 >> flag2;
     recv_data >> guid;
 
-    //DEBUG_LOG("MSG_PARTY_ASSIGNMENT");
+    DEBUG_LOG("MSG_PARTY_ASSIGNMENT");
 
     Group* group = GetPlayer()->GetGroup();
     if (!group)
@@ -745,7 +745,7 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
 /*this procedure handles clients CMSG_REQUEST_PARTY_MEMBER_STATS request*/
 void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: Received opcode CMSG_REQUEST_PARTY_MEMBER_STATS");
+    DEBUG_LOG("WORLD: Received opcode CMSG_REQUEST_PARTY_MEMBER_STATS");
     ObjectGuid guid;
     recv_data >> guid;
 
@@ -861,7 +861,7 @@ void WorldSession::HandleRequestRaidInfoOpcode(WorldPacket& /*recv_data*/)
 
 void WorldSession::HandleOptOutOfLootOpcode(WorldPacket& recv_data)
 {
-	//DEBUG_LOG("WORLD: Received opcode CMSG_OPT_OUT_OF_LOOT");
+    DEBUG_LOG("WORLD: Received opcode CMSG_OPT_OUT_OF_LOOT");
 
     uint32 unkn;
     recv_data >> unkn;

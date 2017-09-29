@@ -77,7 +77,7 @@ struct npc_dorius_stonetenderAI : public npc_escortAI
                 for (uint8 i = 0; i < MAX_STEELSHIFTERS; ++i)
                 {
                     m_creature->GetNearPoint(m_creature, fX, fY, fZ, 0, 15.0f, i * M_PI_F / 2);
-                    m_creature->SummonCreature(NPC_DARK_IRON_STEELSHIFTER, fX, fY, fZ, 0, TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
+                    m_creature->SummonCreature(NPC_DARK_IRON_STEELSHIFTER, fX, fY, fZ, 0, TEMPSPAWN_TIMED_OOC_OR_DEAD_DESPAWN, 60000);
                 }
                 break;
             case 33:
@@ -114,9 +114,9 @@ bool QuestAccept_npc_dorius_stonetender(Player* pPlayer, Creature* pCreature, co
     if (pQuest->GetQuestId() == QUEST_ID_SUNTARA_STONES)
     {
         pCreature->AI()->SendAIEvent(AI_EVENT_START_ESCORT, pPlayer, pCreature, pQuest->GetQuestId());
+        return true;
     }
 
-        return true;
     return false;
 }
 

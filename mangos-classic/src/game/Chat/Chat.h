@@ -206,6 +206,7 @@ class ChatHandler
 
         bool HandleDebugAnimCommand(char* args);
         bool HandleDebugBattlegroundCommand(char* args);
+        bool HandleDebugBattlegroundStartCommand(char* args);
         bool HandleDebugGetItemStateCommand(char* args);
         bool HandleDebugGetItemValueCommand(char* args);
         bool HandleDebugGetLootRecipientCommand(char* args);
@@ -410,6 +411,7 @@ class ChatHandler
         bool HandleReloadDBScriptsOnQuestEndCommand(char* args);
         bool HandleReloadDBScriptsOnQuestStartCommand(char* args);
         bool HandleReloadDBScriptsOnSpellCommand(char* args);
+        bool HandleReloadDBScriptsOnRelayCommand(char* args);
 
         bool HandleReloadEventAITextsCommand(char* args);
         bool HandleReloadEventAISummonsCommand(char* args);
@@ -417,6 +419,7 @@ class ChatHandler
         bool HandleReloadGameGraveyardZoneCommand(char* args);
         bool HandleReloadGameTeleCommand(char* args);
         bool HandleReloadGossipMenuCommand(char* args);
+        bool HandleReloadQuestgiverGreetingCommand(char* args);
         bool HandleReloadGOQuestRelationsCommand(char* args);
         bool HandleReloadGOQuestInvRelationsCommand(char* args);
         bool HandleReloadItemEnchantementsCommand(char* args);
@@ -429,6 +432,7 @@ class ChatHandler
         bool HandleReloadLocalesPageTextCommand(char* args);
         bool HandleReloadLocalesPointsOfInterestCommand(char* args);
         bool HandleReloadLocalesQuestCommand(char* args);
+        bool HandleReloadQuestgiverGreetingLocalesCommand(char* args);
         bool HandleReloadLootTemplatesCreatureCommand(char* args);
         bool HandleReloadLootTemplatesDisenchantCommand(char* args);
         bool HandleReloadLootTemplatesFishingCommand(char* args);
@@ -543,7 +547,9 @@ class ChatHandler
         bool HandleUnmuteCommand(char* args);
         bool HandleMovegensCommand(char* args);
 
-        bool HandleCooldownCommand(char* args);
+        bool HandleCooldownListCommand(char* args);
+        bool HandleCooldownClearCommand(char* args);
+        bool HandleCooldownClearClientSideCommand(char* args);
         bool HandleUnLearnCommand(char* args);
         bool HandleGetDistanceCommand(char* args);
         bool HandleModifyStandStateCommand(char* args);
@@ -588,6 +594,12 @@ class ChatHandler
         bool HandleMmap(char* args);
         bool HandleMmapTestArea(char* args);
         bool HandleMmapTestHeight(char* args);
+
+        bool HandleLinkAddCommand(char * args);
+        bool HandleLinkRemoveCommand(char * args);
+        bool HandleLinkEditCommand(char * args);
+        bool HandleLinkToggleCommand(char * args);
+        bool HandleLinkCheckCommand(char * args);
 
         //! Development Commands
         bool HandleSaveAllCommand(char* args);

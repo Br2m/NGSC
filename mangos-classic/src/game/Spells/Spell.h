@@ -189,12 +189,14 @@ inline ByteBuffer& operator>> (ByteBuffer& buf, SpellCastTargetsReader const& ta
 
 enum SpellState
 {
-    SPELL_STATE_CREATED   = 0,                              // just created
-    SPELL_STATE_STARTING  = 1,                              // doing initial check
-    SPELL_STATE_PREPARING = 2,                              // cast time delay period, non channeled spell
-    SPELL_STATE_CASTING   = 3,                              // channeled time period spell casting state
-    SPELL_STATE_FINISHED  = 4,                              // cast finished to success or fail
-    SPELL_STATE_DELAYED   = 5                               // spell casted but need time to hit target(s)
+    SPELL_STATE_CREATED    = 0,                             // just created
+    SPELL_STATE_TARGETING  = 1,                             // doing initial check
+    SPELL_STATE_CASTING    = 2,                             // cast time delay period, non channeled spell
+    SPELL_STATE_DELAYED    = 3,                             // spell is delayed (cast time pushed back) TODO: need to be implemented properly
+    SPELL_STATE_TRAVELING  = 4,                             // spell casted but need time to hit target(s)
+    SPELL_STATE_LANDING    = 5,                             // processing the effects
+    SPELL_STATE_CHANNELING = 6,                             // channeled time period spell casting state
+    SPELL_STATE_FINISHED   = 7,                             // cast finished to success or fail
 };
 
 enum SpellTargets
@@ -208,6 +210,57 @@ enum SpellTargets
 };
 
 typedef std::multimap<uint64, uint64> SpellTargetTimeMap;
+
+// SpellLog class to manage spells logs that have to be sent to clients
+class SpellLog
+{
+public:
+    SpellLog(Spell* spell) :
+        m_spell(spell), m_spellLogDataEffectsCounter(0), m_spellLogDataEffectsCounterPos(0),
+        m_spellLogDataTargetsCounter(0), m_spellLogDataTargetsCounterPos(0), m_currentEffect(TOTAL_SPELL_EFFECTS) {}
+    SpellLog() = delete;
+    SpellLog(const SpellLog&) = delete;
+
+    void Initialize();
+
+    // Variadic template to add log data (warnings, devs should respect the correct packet structure)
+    template<typename... Args>
+    void AddLog(uint32 spellEffect, Args... args)
+    {
+        SetCurrentEffect(spellEffect);
+        AddLogData(args...);
+        ++m_spellLogDataEffectsCounter;
+    }
+
+    // Send collected logs
+    void SendToSet();
+
+private:
+    // Finalize previous log if need by setting total targets amount
+    void FinalizePrevious();
+
+    // Handle multi targets cases by adjusting targets counter if need
+    void SetCurrentEffect(uint32 effect);
+
+    // Variadic template to method to handle multi arguments passed with different types
+    template<typename T>
+    void AddLogData(T const& data) { m_spellLogData << data; }
+
+    template<typename T, typename... Args>
+    void AddLogData(T const& data, Args const&... args)
+    {
+        AddLogData(data);
+        AddLogData(args...);
+    }
+
+    Spell* m_spell;
+    WorldPacket m_spellLogData;
+    size_t m_spellLogDataEffectsCounterPos;
+    uint32 m_spellLogDataEffectsCounter;
+    size_t m_spellLogDataTargetsCounterPos;
+    uint32 m_spellLogDataTargetsCounter;
+    uint32 m_currentEffect;
+};
 
 class Spell
 {
@@ -347,7 +400,7 @@ class Spell
         uint32 getState() const { return m_spellState; }
         void setState(uint32 state) { m_spellState = state; }
 
-        void DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype);
+        bool DoCreateItem(SpellEffectIndex eff_idx, uint32 itemtype);
 
         void WriteSpellGoTargets(WorldPacket& data);
         void WriteAmmoToPacket(WorldPacket& data) const;
@@ -362,9 +415,8 @@ class Spell
         void SendSpellStart() const;
         void SendSpellGo();
         void SendSpellCooldown();
-        void SendLogExecute() const;
         void SendInterrupted(uint8 result) const;
-        void SendChannelUpdate(uint32 time) const;
+        void SendChannelUpdate(uint32 time, bool properEnding = false) const;
         void SendChannelStart(uint32 duration);
         void SendResurrectRequest(Player* target) const;
 
@@ -444,13 +496,11 @@ class Spell
 
         void ProcSpellAuraTriggers();
 
+        bool CanBeInterrupted() { return m_spellState <= SPELL_STATE_DELAYED || m_spellState == SPELL_STATE_CHANNELING; }
+
         typedef std::list<Unit*> UnitList;
 
     protected:
-        bool HasGlobalCooldown() const;
-        void TriggerGlobalCooldown();
-        void CancelGlobalCooldown();
-
         void SendLoot(ObjectGuid guid, LootType loottype, LockType lockType);
         bool IgnoreItemRequirements() const;                // some item use spells have unexpected reagent data
         void UpdateOriginalCasterPointer();
@@ -521,7 +571,7 @@ class Spell
         //*****************************************
         void FillTargetMap();
         void SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList& targetUnitMap);
-        void CheckSpellScriptTargets(SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> &bounds, UnitList &tempTargetUnitMap, UnitList &targetUnitMap, SpellEffectIndex effIndex);
+        static void CheckSpellScriptTargets(SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> &bounds, UnitList &tempTargetUnitMap, UnitList &targetUnitMap, SpellEffectIndex effIndex);
 
         void FillAreaTargets(UnitList& targetUnitMap, float radius, SpellNotifyPushType pushType, SpellTargets spellTargets, WorldObject* originalCaster = nullptr);
         void FillRaidOrPartyTargets(UnitList& targetUnitMap, Unit* member, float radius, bool raid, bool withPets, bool withcaster) const;
@@ -590,6 +640,12 @@ class Spell
         SpellInfoList m_TriggerSpells;                      // casted by caster to same targets settings in m_targets at success finish of current spell
         SpellInfoList m_preCastSpells;                      // casted by caster to each target at spell hit before spell effects apply
 
+        //*****************************************
+        // Spell scripting subsystem
+        //*****************************************
+        // persistent value to enable storing in script
+        uint64 m_scriptValue;
+
         uint32 m_spellState;
         uint32 m_timer;
 
@@ -604,6 +660,9 @@ class Spell
         // we can't store original aura link to prevent access to deleted auras
         // and in same time need aura data and after aura deleting.
         SpellEntry const* m_triggeredByAuraSpell;
+
+        // needed to store all log for this spell
+        SpellLog m_spellLog;
 };
 
 enum ReplenishType

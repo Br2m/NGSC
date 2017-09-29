@@ -218,8 +218,8 @@ bool Transport::GenerateWaypoints(uint32 pathid, std::set<uint32>& mapids)
     {
         if (mapChange == 0)
         {
-            TaxiPathNodeEntry const& node_i = path[i];
-            if (node_i.mapid == path[i + 1].mapid)
+            TaxiPathNodeEntry const& node_i = *path[i];
+            if (node_i.mapid == path[i + 1]->mapid)
             {
                 keyFrame k(node_i);
                 keyFrames.push_back(k);
@@ -476,7 +476,7 @@ bool Transport::AddPassenger(Player* passenger)
 {
     if (m_passengers.find(passenger) == m_passengers.end())
     {
-        //DETAIL_LOG("Player %s boarded transport %s.", passenger->GetName(), GetName());
+        DETAIL_LOG("Player %s boarded transport %s.", passenger->GetName(), GetName());
         m_passengers.insert(passenger);
     }
     return true;
@@ -485,7 +485,7 @@ bool Transport::AddPassenger(Player* passenger)
 bool Transport::RemovePassenger(Player* passenger)
 {
     if (m_passengers.erase(passenger))
-        //DETAIL_LOG("Player %s removed from transport %s.", passenger->GetName(), GetName());
+        DETAIL_LOG("Player %s removed from transport %s.", passenger->GetName(), GetName());
     return true;
 }
 

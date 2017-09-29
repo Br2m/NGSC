@@ -36,11 +36,9 @@ void ScriptedInstance::DoUseDoorOrButton(uint32 uiEntry, uint32 uiWithRestoreTim
     EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
     if (find != m_mGoEntryGuidStore.end())
         DoUseDoorOrButton(find->second, uiWithRestoreTime, bUseAlternativeState);
-	else
-	{
-		// Output log, possible reason is not added GO to storage, or not yet loaded
-        //DEBUG_log("SD2: Script call DoUseDoorOrButton(by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
-	}
+    else
+        // Output log, possible reason is not added GO to storage, or not yet loaded
+        debug_log("SD2: Script call DoUseDoorOrButton(by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
 }
 
 /**
@@ -72,14 +70,12 @@ void ScriptedInstance::DoRespawnGameObject(ObjectGuid guid, uint32 uiTimeToDespa
 /// Function that uses a door or button that is stored in m_mGoEntryGuidStore
 void ScriptedInstance::DoToggleGameObjectFlags(uint32 uiEntry, uint32 uiGOflags, bool bApply)
 {
-	EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
-	if (find != m_mGoEntryGuidStore.end())
-		DoToggleGameObjectFlags(find->second, uiGOflags, bApply);
-	else
-	{
-		// Output log, possible reason is not added GO to storage, or not yet loaded
-		//DEBUG_log("SD2: Script call ToogleTameObjectFlags (by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
-	}
+    EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
+    if (find != m_mGoEntryGuidStore.end())
+        DoToggleGameObjectFlags(find->second, uiGOflags, bApply);
+    else
+        // Output log, possible reason is not added GO to storage, or not yet loaded
+        debug_log("SD2: Script call ToogleTameObjectFlags (by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
 }
 
 /**
@@ -109,11 +105,9 @@ void ScriptedInstance::DoRespawnGameObject(uint32 uiEntry, uint32 uiTimeToDespaw
     EntryGuidMap::iterator find = m_mGoEntryGuidStore.find(uiEntry);
     if (find != m_mGoEntryGuidStore.end())
         DoRespawnGameObject(find->second, uiTimeToDespawn);
-	else
-	{
-		// Output log, possible reason is not added GO to storage, or not yet loaded;
-		//DEBUG_log("SD2: Script call DoRespawnGameObject(by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
-	}
+    else
+        // Output log, possible reason is not added GO to storage, or not yet loaded;
+        debug_log("SD2: Script call DoRespawnGameObject(by Entry), but no gameobject of entry %u was created yet, or it was not stored by script for map %u.", uiEntry, instance->GetId());
 }
 
 /**
@@ -134,10 +128,8 @@ void ScriptedInstance::DoUpdateWorldState(uint32 uiStateId, uint32 uiStateData)
                 pPlayer->SendUpdateWorldState(uiStateId, uiStateData);
         }
     }
-	else
-	{
-		//DEBUG_log("SD2: DoUpdateWorldState attempt send data but no players in map.");
-	}
+    else
+        debug_log("SD2: DoUpdateWorldState attempt send data but no players in map.");
 }
 
 /// Get the first found Player* (with requested properties) in the map. Can return nullptr.

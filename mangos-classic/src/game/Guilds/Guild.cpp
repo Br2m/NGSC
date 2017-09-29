@@ -122,7 +122,7 @@ bool Guild::Create(Player* leader, std::string gname)
     m_CreatedMonth = local.tm_mon + 1;
     m_CreatedYear  = local.tm_year + 1900;
 
-    //DEBUG_LOG("GUILD: creating guild %s to leader: %s", gname.c_str(), m_LeaderGuid.GetString().c_str());
+    DEBUG_LOG("GUILD: creating guild %s to leader: %s", gname.c_str(), m_LeaderGuid.GetString().c_str());
 
     // gname already assigned to Guild::name, use it to encode string for DB
     CharacterDatabase.escape_string(gname);
@@ -748,7 +748,7 @@ void Guild::Roster(WorldSession* session /*= nullptr*/)
         session->SendPacket(data);
     else
         BroadcastPacket(data);
-    //DEBUG_LOG("WORLD: Sent (SMSG_GUILD_ROSTER)");
+    DEBUG_LOG("WORLD: Sent (SMSG_GUILD_ROSTER)");
 }
 
 void Guild::Query(WorldSession* session)
@@ -773,7 +773,7 @@ void Guild::Query(WorldSession* session)
     data << uint32(m_BackgroundColor);
 
     session->SendPacket(data);
-    //DEBUG_LOG("WORLD: Sent (SMSG_GUILD_QUERY_RESPONSE)");
+    DEBUG_LOG("WORLD: Sent (SMSG_GUILD_QUERY_RESPONSE)");
 }
 
 void Guild::SetEmblem(uint32 emblemStyle, uint32 emblemColor, uint32 borderStyle, uint32 borderColor, uint32 backgroundColor)
@@ -833,7 +833,7 @@ void Guild::DisplayGuildEventLog(WorldSession* session)
         data << uint32(time(nullptr) - itr->TimeStamp);
     }
     session->SendPacket(data);
-    //DEBUG_LOG("WORLD: Sent (MSG_GUILD_EVENT_LOG_QUERY)");
+    DEBUG_LOG("WORLD: Sent (MSG_GUILD_EVENT_LOG_QUERY)");
 }
 
 // Load guild eventlog from DB
@@ -923,5 +923,5 @@ void Guild::BroadcastEvent(GuildEvents event, ObjectGuid guid, char const* str1 
 
     BroadcastPacket(data);
 
-    //DEBUG_LOG("WORLD: Sent SMSG_GUILD_EVENT");
+    DEBUG_LOG("WORLD: Sent SMSG_GUILD_EVENT");
 }

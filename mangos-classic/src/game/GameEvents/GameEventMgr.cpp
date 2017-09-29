@@ -623,7 +623,7 @@ uint32 GameEventMgr::Update(ActiveEvents const* activeAtShutdown /*= nullptr*/)
         // sLog.outErrorDb("Checking event %u",itr);
         if (CheckOneGameEvent(itr, currenttime))
         {
-            // //DEBUG_LOG("GameEvent %u is active",itr->first);
+            // DEBUG_LOG("GameEvent %u is active",itr->first);
             if (!IsActiveEvent(itr))
             {
                 if (mGameEvent[itr].linkedTo == 0 || IsActiveEvent(mGameEvent[itr].linkedTo))
@@ -635,7 +635,7 @@ uint32 GameEventMgr::Update(ActiveEvents const* activeAtShutdown /*= nullptr*/)
         }
         else
         {
-            // //DEBUG_LOG("GameEvent %u is not active",itr->first);
+            // DEBUG_LOG("GameEvent %u is not active",itr->first);
             if (IsActiveEvent(itr))
             {
                 StopEvent(itr);

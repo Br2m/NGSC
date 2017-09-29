@@ -167,8 +167,6 @@ class Map : public GridRefManager<NGridType>
 
         bool CreatureRespawnRelocation(Creature* c);        // used only in CreatureRelocation and ObjectGridUnloader
 
-        bool CheckGridIntegrity(Creature* c, bool moved) const;
-
         uint32 GetInstanceId() const { return i_InstanceId; }
         virtual bool CanEnter(Player* player);
         const char* GetMapName() const;
@@ -289,6 +287,7 @@ class Map : public GridRefManager<NGridType>
         bool GetRandomPointInTheAir(float& x, float& y, float& z, float radius) const;
         bool GetRandomPointUnderWater(float& x, float& y, float& z, float radius, GridMapLiquidData& liquid_status) const;
 
+        TimePoint GetCurrentClockTime();
     private:
         void LoadMapAndVMap(int gx, int gy);
 

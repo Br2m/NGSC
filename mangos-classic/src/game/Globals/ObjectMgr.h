@@ -91,7 +91,7 @@ typedef std::unordered_map < uint32/*mapid*/, CellObjectGuidsMap > MapObjectGuid
 // mangos string ranges
 #define MIN_MANGOS_STRING_ID           1                    // 'mangos_string'
 #define MAX_MANGOS_STRING_ID           2000000000
-#define MIN_DB_SCRIPT_STRING_ID        MAX_MANGOS_STRING_ID // 'db_script_string'
+#define MIN_DB_SCRIPT_STRING_ID        MAX_MANGOS_STRING_ID // 'dbscript_string'
 #define MAX_DB_SCRIPT_STRING_ID        2001000000
 #define MIN_CREATURE_AI_TEXT_STRING_ID (-1)                 // 'creature_ai_texts'
 #define MAX_CREATURE_AI_TEXT_STRING_ID (-1000000)
@@ -277,6 +277,28 @@ struct GraveYardData
 };
 typedef std::multimap < uint32 /*zoneId*/, GraveYardData > GraveYardMap;
 typedef std::pair<GraveYardMap::const_iterator, GraveYardMap::const_iterator> GraveYardMapBounds;
+
+struct QuestgiverGreeting
+{
+    std::string text;
+    uint32 emoteId;
+    uint32 emoteDelay;
+};
+
+struct QuestgiverGreetingLocale
+{
+    std::vector<std::string> localeText;
+};
+
+typedef std::map<uint32, QuestgiverGreeting> QuestgiverGreetingMap;
+typedef std::map<uint32, QuestgiverGreetingLocale> QuestgiverGreetingLocaleMap;
+
+enum
+{
+    QUESTGIVER_CREATURE = 0,
+    QUESTGIVER_GAMEOBJECT = 1,
+    QUESTGIVER_TYPE_MAX = 2,
+};
 
 enum ConditionType
 {
@@ -547,6 +569,8 @@ class ObjectMgr
 
         GossipText const* GetGossipText(uint32 Text_ID) const;
 
+        QuestgiverGreeting const* GetQuestgiverGreetingData(uint32 entry, uint32 type) const;
+
         WorldSafeLocsEntry const* GetClosestGraveYard(float x, float y, float z, uint32 MapId, Team team);
         bool AddGraveYardLink(uint32 id, uint32 zone, Team team, bool inDB = true);
         void SetGraveYardLinkTeam(uint32 id, uint32 zoneId, Team team);
@@ -650,6 +674,8 @@ class ObjectMgr
         void LoadItemLocales();
         void LoadQuestLocales();
         void LoadGossipTextLocales();
+        void LoadQuestgiverGreeting();
+        void LoadQuestgiverGreetingLocales();
         void LoadPageTextLocales();
         void LoadGossipMenuItemsLocales();
         void LoadPointOfInterestLocales();
@@ -825,6 +851,15 @@ class ObjectMgr
         void GetNpcTextLocaleStringsAll(uint32 entry, int32 loc_idx, NpcTextArray* text0_Ptr, NpcTextArray* text1_Ptr) const;
         void GetNpcTextLocaleStrings0(uint32 entry, int32 loc_idx, std::string* text0_0_Ptr, std::string* text1_0_Ptr) const;
 
+        void GetQuestgiverGreetingLocales(uint32 entry, uint32 type, int32 loc_idx, std::string* titlePtr) const;
+
+        QuestgiverGreetingLocale const* GetQuestgiverGreetingLocale(uint32 entry, uint32 type) const
+        {
+            auto itr = m_questgiverGreetingLocaleMap[type].find(entry);
+            if (itr == m_questgiverGreetingLocaleMap[type].end()) return nullptr;
+            return &itr->second;
+        }
+
         PageTextLocale const* GetPageTextLocale(uint32 entry) const
         {
             PageTextLocaleMap::const_iterator itr = mPageTextLocaleMap.find(entry);
@@ -991,6 +1026,9 @@ class ObjectMgr
         {
             return m_DungeonEncounters.equal_range(creditEntry);
         }
+
+        // check if an entry on some map have is an encounter
+        bool IsEncounter(uint32 creditEntry, uint32 mapId) const;
 
         GossipMenusMapBounds GetGossipMenusMapBounds(uint32 uiMenuId) const
         {
@@ -1171,6 +1209,9 @@ class ObjectMgr
         PointOfInterestLocaleMap mPointOfInterestLocaleMap;
         DungeonEncounterMap m_DungeonEncounters;
 
+        QuestgiverGreetingMap m_questgiverGreetingMap[QUESTGIVER_TYPE_MAX];
+        QuestgiverGreetingLocaleMap m_questgiverGreetingLocaleMap[QUESTGIVER_TYPE_MAX];
+        
         CacheNpcTextIdMap m_mCacheNpcTextIdMap;
         CacheVendorItemMap m_mCacheVendorTemplateItemMap;
         CacheVendorItemMap m_mCacheVendorItemMap;

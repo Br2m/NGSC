@@ -59,13 +59,10 @@ void instance_razorfen_downs::SetData(uint32 uiType, uint32 uiData)
     switch (uiType)
     {
         case TYPE_TUTEN_KASH:
-			m_auiEncounter[uiType] = uiData;
+            m_auiEncounter[uiType] = uiData;
             if (uiData == IN_PROGRESS)
                 ++m_uiWaveCounter;
             break;
-		case TYPE_PLAGUEMAW_THE_ROTTING: // Correctif, ajout du boss du rituel
-			m_auiEncounter[uiType] = uiData;
-			break;
     }
 
     if (uiData == DONE)
@@ -74,7 +71,7 @@ void instance_razorfen_downs::SetData(uint32 uiType, uint32 uiData)
 
         std::ostringstream saveStream;
 
-        saveStream << m_auiEncounter[uiType];
+        saveStream << m_auiEncounter[0];
 
         m_strInstData = saveStream.str();
         SaveToDB();
@@ -114,36 +111,35 @@ void instance_razorfen_downs::Load(const char* chrIn)
 
 void instance_razorfen_downs::OnCreatureDeath(Creature* pCreature)
 {
-	//if (GetData(TYPE_TUTEN_KASH) != IN_PROGRESS) // Correctif, inutile et bloquant.
-	//	return;
-	
-	switch (pCreature->GetEntry())
+    // Only use this function if gong event is in progress
+    if (GetData(TYPE_TUTEN_KASH) != IN_PROGRESS)
+        return;
+
+    switch (pCreature->GetEntry())
     {
         case NPC_TOMB_FIEND:
         case NPC_TOMB_REAVER:
             m_lSpawnedMobsList.remove(pCreature->GetObjectGuid());
-			// No more wave-mobs around, enable the gong for the next wave
-			if (m_lSpawnedMobsList.empty())
-			{
-				if (GameObject* pGo = GetSingleGameObjectFromStorage(GO_GONG))
-				{
-					pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
 
-					// Workaround - GO need to be respawned - requires core fix, GO shouldn't despawn in the first place
-					pGo->Respawn();
-				}
-			}
+            // No more wave-mobs around, enable the gong for the next wave
+            if (m_lSpawnedMobsList.empty())
+            {
+                if (GameObject* pGo = GetSingleGameObjectFromStorage(GO_GONG))
+                {
+                    pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+
+                    // Workaround - GO need to be respawned - requires core fix, GO shouldn't despawn in the first place
+                    pGo->Respawn();
+                }
+            }
             break;
         case NPC_TUTEN_KASH:
             SetData(TYPE_TUTEN_KASH, DONE);
             break;
-		case NPC_PLAGUEMAW_THE_ROTTING: // Correctif, ajout du boss du rituel.
-			SetData(TYPE_PLAGUEMAW_THE_ROTTING, DONE);
-			break;
     }
 }
 
-void instance_razorfen_downs::DoSpawnWaveIfCan(GameObject* pGo, Unit* pSource)
+void instance_razorfen_downs::DoSpawnWaveIfCan(GameObject* pGo)
 {
     // safety checks
     if (GetData(TYPE_TUTEN_KASH) == DONE)
@@ -159,33 +155,18 @@ void instance_razorfen_downs::DoSpawnWaveIfCan(GameObject* pGo, Unit* pSource)
     {
         uint8 uiPos = i % 2;                                        // alternate spawn between the left and right corridor
         float fPosX, fPosY, fPosZ;
+        float fTargetPosX, fTargetPosY, fTargetPosZ;
 
         pGo->GetRandomPoint(aSpawnLocations[uiPos].m_fX, aSpawnLocations[uiPos].m_fY, aSpawnLocations[uiPos].m_fZ, 5.0f, fPosX, fPosY, fPosZ);
 
         // move the summoned NPC toward the gong
-        if (Creature* pSummoned = pGo->SummonCreature(aWaveSummonInformation[m_uiWaveCounter].m_uiNpcEntry, fPosX, fPosY, fPosZ, aSpawnLocations[uiPos].m_fO, TEMPSUMMON_DEAD_DESPAWN, 0))
+        if (Creature* pSummoned = pGo->SummonCreature(aWaveSummonInformation[m_uiWaveCounter].m_uiNpcEntry, fPosX, fPosY, fPosZ, aSpawnLocations[uiPos].m_fO, TEMPSPAWN_DEAD_DESPAWN, 0))
         {
             pSummoned->SetWalk(false);
-            pSummoned->GetMotionMaster()->MovePoint(0, 2518.708f, 859.312f, 47.678f); // Correctif, déplacement jusqu'au centre de la pièce.
+            pGo->GetContactPoint(pSummoned, fTargetPosX, fTargetPosY, fTargetPosZ);
+            pSummoned->GetMotionMaster()->MovePoint(0, fTargetPosX, fTargetPosY, fTargetPosZ);
         }
     }
-
-	if (m_uiWaveCounter == 0) // Correctif, ajout des 2 monstres manquants, 1ère vague
-	{
-		for (uint8 i = 0; i < 2; ++i)
-		{
-			float fPosX, fPosY, fPosZ;
-
-			pGo->GetRandomPoint(2526.96f, 826.94f, 47.84f, 5.0f, fPosX, fPosY, fPosZ);
-
-			// move the summoned NPC toward the gong
-			if (Creature* pSummoned = pGo->SummonCreature(aWaveSummonInformation[m_uiWaveCounter].m_uiNpcEntry, fPosX, fPosY, fPosZ, 5.0f, TEMPSUMMON_DEAD_DESPAWN, 0))
-			{
-				pSummoned->SetWalk(false);
-				pSummoned->GetMotionMaster()->MovePoint(0, 2518.708f, 859.312f, 47.678f);
-			}
-		}
-	}
 
     // Will increase m_uiWaveCounter, hence after the wave is summoned
     SetData(TYPE_TUTEN_KASH, IN_PROGRESS);
@@ -199,14 +180,14 @@ InstanceData* GetInstanceData_instance_razorfen_downs(Map* pMap)
 
 bool ProcessEventId_event_go_tutenkash_gong(uint32 /*uiEventId*/, Object* pSource, Object* pTarget, bool /*bIsStart*/)
 {
-	if (pSource->GetTypeId() == TYPEID_PLAYER && pTarget->GetTypeId() == TYPEID_GAMEOBJECT)
+    if (pSource->GetTypeId() == TYPEID_PLAYER && pTarget->GetTypeId() == TYPEID_GAMEOBJECT)
     {
         instance_razorfen_downs* pInstance = (instance_razorfen_downs*)((Player*)pSource)->GetInstanceData();
-		if (!pInstance)
-			return true;
-	
-		pInstance->DoSpawnWaveIfCan((GameObject*)pTarget, (Unit*)pSource);
-			return true;
+        if (!pInstance)
+            return true;
+
+        pInstance->DoSpawnWaveIfCan((GameObject*)pTarget);
+        return true;
     }
 
     return false;

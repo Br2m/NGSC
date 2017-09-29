@@ -32,7 +32,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
     uint8 itemSlot;
     recv_data >> itemSlot;
 
-    //DEBUG_LOG("WORLD: CMSG_AUTOSTORE_LOOT_ITEM > requesting item in slot %u", uint32(itemSlot));
+    DEBUG_LOG("WORLD: CMSG_AUTOSTORE_LOOT_ITEM > requesting item in slot %u", uint32(itemSlot));
 
     Loot* loot = sLootMgr.GetLoot(_player);
 
@@ -70,7 +70,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
 {
-    //DEBUG_LOG("WORLD: CMSG_LOOT_MONEY");
+    DEBUG_LOG("WORLD: CMSG_LOOT_MONEY");
 
     Loot* pLoot = sLootMgr.GetLoot(_player);
 
@@ -85,7 +85,7 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
 
 void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
 {
-    //DEBUG_LOG("WORLD: CMSG_LOOT");
+    DEBUG_LOG("WORLD: CMSG_LOOT");
 
     ObjectGuid lguid;
     recv_data >> lguid;
@@ -109,7 +109,7 @@ void WorldSession::HandleLootOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleLootReleaseOpcode(WorldPacket& recv_data)
 {
-    //DEBUG_LOG("WORLD: CMSG_LOOT_RELEASE");
+    DEBUG_LOG("WORLD: CMSG_LOOT_RELEASE");
 
     ObjectGuid lguid;
     recv_data >> lguid;
@@ -134,7 +134,7 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recv_data)
         return;
     }
 
-    //DEBUG_LOG("WorldSession::HandleLootMasterGiveOpcode> Giver = %s, Target = %s.", _player->GetGuidStr().c_str(), targetGuid.GetString().c_str());
+    DEBUG_LOG("WorldSession::HandleLootMasterGiveOpcode> Giver = %s, Target = %s.", _player->GetGuidStr().c_str(), targetGuid.GetString().c_str());
 
     Loot* pLoot = sLootMgr.GetLoot(_player, lootguid);
 

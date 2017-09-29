@@ -85,6 +85,29 @@ cmake_install.cmake
 #
 # Special exceptions
 #
+AUTHORS.md
+CONTRIBUTING.md
+COPYING
+ChangeLog.md
+NEWS.md
+README.md
+README_PLAYERBOT.txt
+THANKS
+WARNING
+appveyor.yml
+cmake/
+contrib/
+createprojects.bat
+dep/
+doc/
+sql/
+version.txt
+CMakeLists.txt
+src/framework
+src/mangosd
+src/realmd
+src/shared
+src/tools
 
 # recastnavigation directory needs exception
 !dep/recastnavigation/RecastDemo/Build/
