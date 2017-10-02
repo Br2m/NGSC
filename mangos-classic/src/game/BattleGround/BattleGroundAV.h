@@ -68,6 +68,12 @@
 #define BG_AV_REP_OWNED_MINE                24
 #define BG_AV_REP_OWNED_MINE_HOLIDAY        36
 
+enum BG_AV_npcs
+{
+	BG_AV_NPC_STABLED_RAM				= 13676,
+	BG_AV_NPC_STABLED_FROSTWOLF			= 13618,
+};
+
 enum BG_AV_Sounds
 {
     BG_AV_SOUND_NEAR_LOSE               = 8456,             // not confirmed yet
@@ -90,6 +96,12 @@ enum BG_AV_OTHER_VALUES
     BG_AV_MINE_RECLAIM_TIMER    = 1200000,                  // TODO: get the right value.. this is currently 20 minutes
     BG_AV_FACTION_A             = 730,
     BG_AV_FACTION_H             = 729,
+
+	BG_AV_SCRAPS_BUFF_HP_H		= 22751,				// Scraps quests buff rewards
+	BG_AV_SCRAPS_BUFF_HP_A		= 23693,
+	BG_AV_SCRAPS_BUFF_DAMAGE1	= 28418,
+	BG_AV_SCRAPS_BUFF_DAMAGE2	= 28419,
+	BG_AV_SCRAPS_BUFF_DAMAGE3	= 28420,
 };
 #define BG_AV_MAX_MINES 2
 
