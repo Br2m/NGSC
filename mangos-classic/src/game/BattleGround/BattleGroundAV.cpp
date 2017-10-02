@@ -100,7 +100,7 @@ void BattleGroundAV::HandleQuestComplete(uint32 questid, Player* player, Object*
         return;
     BattleGroundAVTeamIndex teamIdx = GetAVTeamIndexByTeamId(player->GetTeam());
     MANGOS_ASSERT(teamIdx != BG_AV_TEAM_NEUTRAL);
-
+	Creature* npc = GetBgMap()->GetCreature(questGiver->GetObjectGuid());
     uint32 reputation = 0;                                  // reputation for the whole team (other reputation must be done in db)
     // TODO add events (including quest not available anymore, next quest availabe, go/npc de/spawning)
     sLog.outError("BattleGroundAV: Quest %i completed", questid);
@@ -108,8 +108,44 @@ void BattleGroundAV::HandleQuestComplete(uint32 questid, Player* player, Object*
     {
         case BG_AV_QUEST_A_SCRAPS1:
         case BG_AV_QUEST_A_SCRAPS2:
+			switch (m_Team_QuestStatus[teamIdx][0])
+			{
+			case 500 :
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_A, ALLIANCE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE1, ALLIANCE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_D, npc, 0, 100.00f);
+				break;
+			case 1000 :
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_A, ALLIANCE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE2, ALLIANCE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_E, npc, 0, 100.00f);
+				break;
+			case 1500 :
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_A, ALLIANCE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE3, ALLIANCE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_F, npc, 0, 100.00f);
+				break;
+			}
         case BG_AV_QUEST_H_SCRAPS1:
         case BG_AV_QUEST_H_SCRAPS2:
+			switch (m_Team_QuestStatus[teamIdx][0])
+			{
+			case 500:
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_H, HORDE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE1, HORDE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_D, npc, 0, 100.00f);
+				break;
+			case 1000:
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_H, HORDE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE2, HORDE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_E, npc, 0, 100.00f);
+				break;
+			case 1500:
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_HP_H, HORDE);
+				CastSpellOnTeam(BG_AV_SCRAPS_BUFF_DAMAGE3, HORDE);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_F, npc, 0, 100.00f);
+				break;
+			}
             m_Team_QuestStatus[teamIdx][0] += 20;
             reputation = 1;
             if (m_Team_QuestStatus[teamIdx][0] == 500 || m_Team_QuestStatus[teamIdx][0] == 1000 || m_Team_QuestStatus[teamIdx][0] == 1500)  // 25,50,75 turn ins
@@ -137,24 +173,22 @@ void BattleGroundAV::HandleQuestComplete(uint32 questid, Player* player, Object*
             m_Team_QuestStatus[teamIdx][2]++;
             reputation = 2;
             if (m_Team_QuestStatus[teamIdx][2] == 60)
-	    {
-		DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
-		Creature* npc = GetBgMap()->GetCreature(questGiver->GetObjectGuid());
-		npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
-		break;
-	    }
+			{
+				DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
+				break;
+			}
             break;
         case BG_AV_QUEST_A_COMMANDER3:
         case BG_AV_QUEST_H_COMMANDER3:
             m_Team_QuestStatus[teamIdx][3]++;
             reputation = 5;
             if (m_Team_QuestStatus[teamIdx][3] == 30)
-	    {
-		DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
-		Creature* npc = GetBgMap()->GetCreature(questGiver->GetObjectGuid());
-		npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
-		break;
-	    }
+			{
+				DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
+				npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
+				break;
+			}
             break;
         case BG_AV_QUEST_A_BOSS1:
         case BG_AV_QUEST_H_BOSS1:
@@ -171,43 +205,142 @@ void BattleGroundAV::HandleQuestComplete(uint32 questid, Player* player, Object*
         case BG_AV_QUEST_H_NEAR_MINE:
             m_Team_QuestStatus[teamIdx][5]++;
             reputation = 2;
-            if (m_Team_QuestStatus[teamIdx][5] == 28)
-            {
-                DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here", questid);
-		if (m_Team_QuestStatus[teamIdx][6] == 7)
-                    DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here - ground assault ready", questid);
-	    }
+			switch (m_Team_QuestStatus[teamIdx][5])
+			{
+			case 10:
+				if (m_Team_QuestStatus[teamIdx][6] < 2)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
+					break;
+				}
+				break;
+			case 20:
+				if (m_Team_QuestStatus[teamIdx][6] < 5)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_B, npc, 4, 1);
+					break;
+				}
+				break;
+			case 28:
+				if (m_Team_QuestStatus[teamIdx][6] < 7)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_C, npc, 4, 1);
+					break;
+				}
+				break;
+			}
             break;
         case BG_AV_QUEST_A_OTHER_MINE:
         case BG_AV_QUEST_H_OTHER_MINE:
             m_Team_QuestStatus[teamIdx][6]++;
             reputation = 3;
-            if (m_Team_QuestStatus[teamIdx][6] == 7)
-            {
-                DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here", questid);
-		if (m_Team_QuestStatus[teamIdx][5] == 20)
-                    DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here - ground assault ready", questid);
-            }
-            break;
+			switch (m_Team_QuestStatus[teamIdx][6])
+			{
+			case 2:
+				if (m_Team_QuestStatus[teamIdx][5] < 10)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1);
+					break;
+				}
+				break;
+			case 5:
+				if (m_Team_QuestStatus[teamIdx][5] < 20)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_B, npc, 4, 1);
+					break;
+				}
+				break;
+			case 7:
+				if (m_Team_QuestStatus[teamIdx][5] < 28)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_C, npc, 4, 1);
+					break;
+				}
+				break;
+			}
+			break;
         case BG_AV_QUEST_A_RIDER_HIDE:
         case BG_AV_QUEST_H_RIDER_HIDE:
             m_Team_QuestStatus[teamIdx][7]++;
             reputation = 1;
             if (m_Team_QuestStatus[teamIdx][7] == 25)
             {
-                DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here", questid);
-		if (m_Team_QuestStatus[teamIdx][8] == 25)
-                    DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here - rider assault ready", questid);
+                DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
+				npc->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                if (m_Team_QuestStatus[teamIdx][8] == 25)
+				{
+					npc->AI()->SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, npc, 4, 1); // npc_stormpike_ram_rider_commander & npc_frostwolf_wolf_rider_commander
+                    DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here in battlegrounc.cpp - rider assault ready", questid);
+				}
             }
             break;
-        case BG_AV_QUEST_A_RIDER_TAME:
-        case BG_AV_QUEST_H_RIDER_TAME:
-            m_Team_QuestStatus[teamIdx][8]++;
-            reputation = 1;
+		// We need to implement each event individualy.
+        case BG_AV_QUEST_A_RIDER_TAME:			// 7 ram places.
+        case BG_AV_QUEST_H_RIDER_TAME:			// 8 wolfes places.
+			m_Team_QuestStatus[teamIdx][8]++;
+			reputation = 1;
+			if (npc->getFaction() == 1216) // Alliance
+			{
+				switch (m_Team_QuestStatus[teamIdx][8])
+				{
+				case 1:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 606.648f, -6.28734f, 41.9955f, 2.69391f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 5:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 606.764f, -0.704068f, 41.9955f, 3.46595f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 10:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 602.904f, 3.59008f, 41.9955f, 4.25842f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 15:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 597.385f, 3.77755f, 41.9955f, 5.02104f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 20:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 592.951f, 0.135817f, 41.9955f, 5.83629f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 22:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 592.697f, -5.69196f, 41.9955f, 0.391907f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 25:
+					npc->SummonCreature(BG_AV_NPC_STABLED_RAM, 596.245f, -10.1417f, 41.9955f, 1.15767f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				}
+			}
+			else if (npc->getFaction() == 1214) // Horde
+			{
+				switch (m_Team_QuestStatus[teamIdx][8])
+				{
+				case 1:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1267.93f, -592.807f, 55.3891f, 6.23267f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 5:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1269.19f, -609.817f, 55.3277f, 6.16468f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 10:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1268.26f, -598.099f, 55.3862f, 6.17373f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 15:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1253.72f, -605.134f, 55.3862f, 3.10635f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 17:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1268.79f, -604.023f, 55.3738f, 6.22977f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 20:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1254.58f, -610.523f, 55.3097f, 3.07169f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 22:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1253.52f, -593.603f, 55.3924f, 3.08268f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				case 25:
+					npc->SummonCreature(BG_AV_NPC_STABLED_FROSTWOLF, -1253.67f, -599.166f, 55.3863f, 3.01278f, TEMPSPAWN_MANUAL_DESPAWN, 0);
+					break;
+				}
+			}
             if (m_Team_QuestStatus[teamIdx][8] == 25)
             {
-                DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here", questid);
-		if (m_Team_QuestStatus[teamIdx][7] == 25)
+                DEBUG_LOG("BattleGroundAV: Quest %i completed", questid);
+				npc->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
+                if (m_Team_QuestStatus[teamIdx][7] == 25)
                     DEBUG_LOG("BattleGroundAV: Quest %i completed (need to implement some events here - rider assault ready", questid);
             }
             break;
