@@ -230,7 +230,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
         case ACT_PASSIVE:                                   // 0x01
         case ACT_ENABLED:                                   // 0xC1    spell
         {
-            charmInfo->SetIsRetreating();
+			charmInfo->SetIsRetreating();
             charmInfo->SetSpellOpener();
 
             Unit* unit_target = targetGuid ? _player->GetMap()->GetUnit(targetGuid) : nullptr;
@@ -265,13 +265,13 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
             Spell* spell = new Spell(petUnit, spellInfo, false);
 
             SpellCastResult result = spell->CheckPetCast(unit_target);
-
-            const SpellRangeEntry* sRange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
+			const SpellRangeEntry* sRange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
 
             if (unit_target && !(petUnit->IsWithinDistInMap(unit_target, sRange->maxRange) && petUnit->IsWithinLOSInMap(unit_target))
-                && !(GetPlayer()->IsFriendlyTo(unit_target) || petUnit->HasAuraType(SPELL_AURA_MOD_POSSESS)))
+                && !(GetPlayer()->IsFriendlyTo(unit_target) || petUnit->HasAuraType(SPELL_AURA_MOD_POSSESS)) 
+				&& !((spellInfo->Id == 24450) || (spellInfo->Id == 24452) || (spellInfo->Id == 24453))) // Correctif Roder
             {
-                charmInfo->SetSpellOpener(spellid, sRange->minRange, sRange->maxRange);
+				charmInfo->SetSpellOpener(spellid, sRange->minRange, sRange->maxRange);
                 spell->finish(false);
                 delete spell;
 
@@ -297,7 +297,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
             // auto turn to target unless possessed
             if (result == SPELL_FAILED_UNIT_NOT_INFRONT && !petUnit->hasUnitState(UNIT_STAT_CONTROLLED))
             {
-                if (unit_target)
+				if (unit_target)
                 {
                     petUnit->SetInFront(unit_target);
                     if (unit_target->GetTypeId() == TYPEID_PLAYER)
@@ -317,12 +317,12 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
 
             if (result == SPELL_CAST_OK)
             {
-                charmInfo->SetSpellOpener();
+				charmInfo->SetSpellOpener();
                 spell->SpellStart(&(spell->m_targets));
             }
             else
             {
-                if (petUnit->hasUnitState(UNIT_STAT_CONTROLLED))
+				if (petUnit->hasUnitState(UNIT_STAT_CONTROLLED))
                     Spell::SendCastResult(GetPlayer(), spellInfo, result);
                 else
                 {
